@@ -1,6 +1,6 @@
 {
   "name": "jpeg-exif",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Use for parse .jpg file exif info (including GPS info.).",
   "main": "index.js",
   "scripts": {
@@ -15,6 +15,15 @@
     "photo",
     "jfif"
   ],
+  "homepage": "https://github.com/zhso/jpeg-exif",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zhso/jpeg-exif.git"
+  },
+  "bugs": {
+    "url": "https://github.com/zhso/jpeg-exif/issues",
+    "email": "s@zhso.net"
+  },
   "author": "s@zhso.net",
   "license": "MIT"
 }
