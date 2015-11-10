@@ -4,8 +4,8 @@ Get exif infomation from jpeg format file.
 
 ```js
 var exif = require("jpeg-exif");
-var file = "x:/Photo/IMG_0001.JPG";
-exif.parse(path + file, function (err, data) {
+var file = "~/Photo/IMG_0001.JPG";
+exif.parse(file, function (err, data) {
     if (err) {
         console.log(err);
     } else {
@@ -17,7 +17,7 @@ exif.parse(path + file, function (err, data) {
 
 ## Features
 
-* Support Lot of Exif Tags(469)
+* Support More Than 450 Exif Tags
 * Support GPSInfo Tags
 
 ## Installation
