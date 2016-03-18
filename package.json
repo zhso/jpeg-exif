@@ -25,5 +25,19 @@
     "email": "s@zhso.net"
   },
   "author": "s@zhso.net",
-  "license": "MIT"
+  "license": "MIT",
+  "eslintConfig": {
+    "parserOptions": {
+      "ecmaVersion": 6,
+      "ecmaFeatures": {
+        "impliedStrict": true
+      }
+    },
+    "env": {
+      "node": true,
+      "es6": true
+    },
+    "rules": {
+    }
+  }
 }

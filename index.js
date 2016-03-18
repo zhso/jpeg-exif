@@ -503,7 +503,7 @@ const gpsTags = {
     "001d": "GPSDateStamp",
     "001e": "GPSDifferential",
     "001f": "GPSHPositioningError"
-}
+};
 const dataFormat = [
     "unsigned byte",
     "ascii strings",
@@ -520,7 +520,7 @@ const dataFormat = [
 ];
 const bytes = [1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8];
 const fs = require("fs");
-//exports.parse = async;
+exports.parse = async;
 exports.parseSync = sync;
 function ifds(data, cursor, tags, direction) {
     let exif = {};
@@ -532,7 +532,7 @@ function ifds(data, cursor, tags, direction) {
         //console.log("TAG:" + data.toString("hex", cursor, cursor + 2) + " > " + tag);
         if (tag) {
             //throw new Error(data.toString("hex", cursor, cursor + 2) + " was unsupport tag.");
-            let format = dataFormat[direction ? (data.readUInt16BE(cursor + 2) - 1) : (data.readUInt16LE(cursor + 2) - 1)];//ffff
+            let format = dataFormat[direction ? data.readUInt16BE(cursor + 2) - 1 : data.readUInt16LE(cursor + 2) - 1];//ffff
             let componentBytes = bytes[direction ? data.readUInt16BE(cursor + 2) - 1 : data.readUInt16LE(cursor + 2) - 1];
             console.log("componentBytes:" + data.slice(cursor, cursor + 2).toString("hex"));
             let componentsNumber = direction ? data.readUInt32BE(cursor + 4) : data.readUInt32LE(cursor + 4);//NNNNNNNN
@@ -565,7 +565,7 @@ function ifds(data, cursor, tags, direction) {
                     let length = valueBuffer.length;
                     value = [];
                     for (let i = 0; i < length; i += 8) {
-                        value.push(direction ? (valueBuffer.readUInt32BE(i) / valueBuffer.readUInt32BE(i + 4)) : (valueBuffer.readUInt32LE(i) / valueBuffer.readUInt32LE(i + 4)));
+                        value.push(direction ? valueBuffer.readUInt32BE(i) / valueBuffer.readUInt32BE(i + 4) : valueBuffer.readUInt32LE(i) / valueBuffer.readUInt32LE(i + 4));
                     }
                     break;
                 case "undefined":
@@ -627,7 +627,7 @@ function sync(file) {
             direction = false;
         }
         exif = ifds(data, 20, ifdTags, direction);
-        exif.SubExif = ifds(data, parseInt(exif.ExifOffset, 10) + 12, ifdTags, direction);
+        exif.SubExif = ifds(data, parseInt(exif["ExifOffset"], 10) + 12, ifdTags, direction);
         if (exif.GPSInfo) {
             exif.GPSInfo = ifds(data, parseInt(exif.GPSInfo, 10) + 12, gpsTags, direction);
         }
@@ -665,7 +665,7 @@ function async(file, callback) {
                     //console.log("0x10-0x14:" + "0x" + data.toString("hex", 16, 20));//Offset to 1st. IFD
                     /*IFD0*/
                     let exif = ifds(data, 20, ifdTags);
-                    exif.SubExif = ifds(data, parseInt(exif.ExifOffset, 10) + 12, ifdTags);
+                    exif.SubExif = ifds(data, parseInt(exif["ExifOffset"], 10) + 12, ifdTags);
                     if (exif.GPSInfo) {
                         exif.GPSInfo = ifds(data, parseInt(exif.GPSInfo, 10) + 12, gpsTags);
                     }
@@ -687,4 +687,4 @@ function async(file, callback) {
     }).catch(error=> {
         callback(error, undefined);
     });
-};
+}
