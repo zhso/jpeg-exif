@@ -524,30 +524,30 @@ exports.parse = async;
 exports.parseSync = sync;
 function ifds(data, cursor, tags, direction) {
     let exif = {};
-    //console.log("0x" + cursor.toString(16) + "-0x" + (cursor + 2).toString(16) + ":0x" + data.toString("hex", cursor, cursor + 2) + "|" + data.readUInt16BE(cursor));//EEEE
     cursor += 2;
     for (cursor; cursor < 12 * data.readUInt16BE(cursor) + cursor; cursor += 12) {
         let tagAddress = direction ? data.toString("hex", cursor, cursor + 2) : data.slice(cursor, cursor + 2).reverse().toString("hex");
+        //console.log(data.toString("hex", cursor, cursor + 2));
         let tag = tags[tagAddress];//TTTT
-        //console.log("TAG:" + data.toString("hex", cursor, cursor + 2) + " > " + tag);
+        let format = dataFormat[direction ? data.readUInt16BE(cursor + 2) - 1 : data.readUInt16LE(cursor + 2) - 1];//ffff
+        let componentBytes = bytes[direction ? data.readUInt16BE(cursor + 2) - 1 : data.readUInt16LE(cursor + 2) - 1];
+        let componentsNumber = direction ? data.readUInt32BE(cursor + 4) : data.readUInt32LE(cursor + 4);//NNNNNNNN
+        let size = componentsNumber * componentBytes;
+        console.log(tag + ":" + size);
+        if (componentBytes == undefined) {
+            console.log(data.toString("utf8", cursor + 2, cursor + 100));
+        }
+        let valueBuffer;
+        let valueAddress;//delete
+        if (size > 4) {
+            let offset = direction ? data.readUInt32BE(cursor + 8) : data.readUInt32LE(cursor + 8);//DDDDDDDD
+            valueBuffer = data.slice(12 + offset, 12 + offset + size);
+            valueAddress = "0x" + (12 + offset).toString(16) + "-0x" + (12 + offset + size).toString(16);//delete
+        } else {
+            valueBuffer = data.slice(cursor + 8, cursor + 12);//DDDDDDDD
+        }
+        let value;
         if (tag) {
-            //throw new Error(data.toString("hex", cursor, cursor + 2) + " was unsupport tag.");
-            let format = dataFormat[direction ? data.readUInt16BE(cursor + 2) - 1 : data.readUInt16LE(cursor + 2) - 1];//ffff
-            let componentBytes = bytes[direction ? data.readUInt16BE(cursor + 2) - 1 : data.readUInt16LE(cursor + 2) - 1];
-            console.log("componentBytes:" + data.slice(cursor, cursor + 2).toString("hex"));
-            let componentsNumber = direction ? data.readUInt32BE(cursor + 4) : data.readUInt32LE(cursor + 4);//NNNNNNNN
-            let size = componentsNumber * componentBytes;
-            let valueBuffer;
-            let valueAddress;//delete
-            if (size > 4) {
-                let offset = direction ? data.readUInt32BE(cursor + 8) : data.readUInt32LE(cursor + 8);//DDDDDDDD
-                valueBuffer = data.slice(12 + offset, 12 + offset + size);
-                //valueBuffer = direction ? valueBuffer : valueBuffer.reverse();************
-                valueAddress = "0x" + (12 + offset).toString(16) + "-0x" + (12 + offset + size).toString(16);//delete
-            } else {
-                valueBuffer = data.slice(cursor + 8, cursor + 12);//DDDDDDDD
-            }
-            let value;
             switch (format) {
                 case "unsigned byte":
                     value = valueBuffer.readUInt8(0);
@@ -591,12 +591,12 @@ function ifds(data, cursor, tags, direction) {
                     value = "0x" + valueBuffer.toString("hex");
                     break;
             }
-            //console.log("0x" + cursor.toString(16) + "-0x" + (cursor + 12).toString(16) + ":0x" + data.toString("hex", cursor, cursor + 12) + ( valueAddress ? " > " + valueAddress + ":0x" + valueBuffer.toString("hex") : "") + " | " + (direction ? data.toString("hex", cursor, cursor + 2) : data.slice(cursor, cursor + 2).reverse().toString("hex")) + ":" + tag + "[" + format + "]: " + value);
             console.log("-----------------------------------\n"
                 + tagAddress + ":" + tag
                 + "\n0x" + cursor.toString(16) + "-0x" + (cursor + 12).toString(16) + ":" + data.toString("hex", cursor, cursor + 12) + ">" + componentsNumber + "*" + componentBytes
                 + ( valueAddress ? "\n" + valueAddress + ":0x" + valueBuffer.toString("hex") : "")
-                + "\n" + format + ":" + value);
+                + "\n" + format + ":" + value
+                + "\n-------------------------------------");
             if (value) {
                 exif[tag] = value;
             }
@@ -604,13 +604,13 @@ function ifds(data, cursor, tags, direction) {
             console.log("unkownTag:" + tagAddress);
         }
     }
-    //console.log("0x" + cursor.toString(16) + "-0x" + (cursor + 4).toString(16) + ":0x" + data.toString("hex", cursor, cursor + 4) + " | " + data.readUInt32BE(cursor));
     return exif;
 }
 function sync(file) {
     if (!file) {
         throw new Error("Please give me the file.");
     }
+    //console.log(file);
     let data = fs.readFileSync(file);
     //console.log("0x00-0x02:" + "0x" + data.toString("hex", 0, 2));//SOI
     let maker = data.toString("hex", 2, 4);
@@ -633,12 +633,13 @@ function sync(file) {
         }
         return exif;
     } else if (maker === "ffe0") {
-        console.log("0x04-0x06:" + "0x" + data.toString("hex", 4, 6) + " | " + (data[4] * 256 + data[5]));//SSSS:Jfif data area
-        console.log("0x06-0x0b:" + "0x" + data.toString("hex", 6, 11) + " | " + data.toString("ascii", 6, 11));//Jfif Head
-        console.log("0x0b-0x0d:" + "0x" + data.toString("hex", 11, 13) + " | " + data.toString("ascii", 11, 13));//version
+        //console.log("0x04-0x06:" + "0x" + data.toString("hex", 4, 6) + " | " + (data[4] * 256 + data[5]));//SSSS:Jfif data area
+        //console.log("0x06-0x0b:" + "0x" + data.toString("hex", 6, 11) + " | " + data.toString("ascii", 6, 11));//Jfif Head
+        //console.log("0x0b-0x0d:" + "0x" + data.toString("hex", 11, 13) + " | " + data.toString("ascii", 11, 13));//version
         return {};
     } else {
-        throw new Error(maker + ": unsupport file maker.");
+        //throw new Error(maker + ": unsupport file maker.");
+        return {};
     }
 }
 function async(file, callback) {
@@ -650,10 +651,6 @@ function async(file, callback) {
             if (err) {
                 reject(err);
             } else {
-                //TODO: Add MakerNote Handler Support
-                //TODO: Add Other File Format Support
-                //TODO: Add Inter II Support
-                //TODO: Clear Comment Log
                 //console.log("0x00-0x02:" + "0x" + data.toString("hex", 0, 2));//SOI
                 let maker = data.toString("hex", 2, 4);
                 //console.log("0x02-0x04:" + "0x" + maker);//APP1
