@@ -585,8 +585,8 @@ function ifds(data, cursor, tags, direction) {
                     break;
                 default:
                     value = "0x" + valueBuffer.toString("hex");
-                    throw new Error("unsupport data format: " + formatValue);
-                //break;
+                    //throw new Error("unsupport data format: " + formatValue);
+                    break;
             }
             /*console.log("-----------------------------------\n"
              + tagAddress + ":" + tag
@@ -596,7 +596,7 @@ function ifds(data, cursor, tags, direction) {
              + "\n-------------------------------------");*/
             exif[tag] = value;
         } else {
-            throw new Error("unsupport exif tag: " + tagAddress);
+            //throw new Error("unsupport exif tag: " + tagAddress);
         }
     }
     return exif;
@@ -633,8 +633,8 @@ function sync(file) {
         //console.log("0x0b-0x0d:" + "0x" + data.toString("hex", 11, 13) + " | " + data.toString("ascii", 11, 13));//version
         return {};
     } else {
-        throw new Error("unsupport file maker: " + maker);
-        //return {};
+        //throw new Error("unsupport file maker: " + maker);
+        return {};
     }
 }
 function async(file, callback) {
