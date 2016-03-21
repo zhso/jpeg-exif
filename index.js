@@ -527,16 +527,12 @@ function ifds(data, cursor, tags, direction) {
     cursor += 2;
     for (cursor; cursor < 12 * data.readUInt16BE(cursor) + cursor; cursor += 12) {
         let tagAddress = direction ? data.toString("hex", cursor, cursor + 2) : data.slice(cursor, cursor + 2).reverse().toString("hex");
-        //console.log(data.toString("hex", cursor, cursor + 2));
         let tag = tags[tagAddress];//TTTT
-        let format = dataFormat[direction ? data.readUInt16BE(cursor + 2) - 1 : data.readUInt16LE(cursor + 2) - 1];//ffff
+        let formatValue = direction ? data.readUInt16BE(cursor + 2) - 1 : data.readUInt16LE(cursor + 2) - 1;
+        let format = dataFormat[formatValue];//ffff
         let componentBytes = bytes[direction ? data.readUInt16BE(cursor + 2) - 1 : data.readUInt16LE(cursor + 2) - 1];
         let componentsNumber = direction ? data.readUInt32BE(cursor + 4) : data.readUInt32LE(cursor + 4);//NNNNNNNN
         let size = componentsNumber * componentBytes;
-        console.log(tag + ":" + size);
-        if (componentBytes == undefined) {
-            console.log(data.toString("utf8", cursor + 2, cursor + 100));
-        }
         let valueBuffer;
         let valueAddress;//delete
         if (size > 4) {
@@ -570,13 +566,13 @@ function ifds(data, cursor, tags, direction) {
                     break;
                 case "undefined":
                     switch (tag) {
-                        case"ExifVersion":
+                        case "ExifVersion":
                             value = valueBuffer.toString();
                             break;
-                        case"FlashPixVersion":
+                        case "FlashPixVersion":
                             value = valueBuffer.toString();
                             break;
-                        case"SceneType":
+                        case "SceneType":
                             value = valueBuffer.readUInt8(0);
                             break;
                         default:
@@ -589,19 +585,18 @@ function ifds(data, cursor, tags, direction) {
                     break;
                 default:
                     value = "0x" + valueBuffer.toString("hex");
-                    break;
+                    throw new Error("unsupport data format: " + formatValue);
+                //break;
             }
-            console.log("-----------------------------------\n"
-                + tagAddress + ":" + tag
-                + "\n0x" + cursor.toString(16) + "-0x" + (cursor + 12).toString(16) + ":" + data.toString("hex", cursor, cursor + 12) + ">" + componentsNumber + "*" + componentBytes
-                + ( valueAddress ? "\n" + valueAddress + ":0x" + valueBuffer.toString("hex") : "")
-                + "\n" + format + ":" + value
-                + "\n-------------------------------------");
-            if (value) {
-                exif[tag] = value;
-            }
+            /*console.log("-----------------------------------\n"
+             + tagAddress + ":" + tag
+             + "\n0x" + cursor.toString(16) + "-0x" + (cursor + 12).toString(16) + ":" + data.toString("hex", cursor, cursor + 12) + ">" + componentsNumber + "*" + componentBytes
+             + ( valueAddress ? "\n" + valueAddress + ":0x" + valueBuffer.toString("hex") : "")
+             + "\n" + format + ":" + value
+             + "\n-------------------------------------");*/
+            exif[tag] = value;
         } else {
-            console.log("unkownTag:" + tagAddress);
+            throw new Error("unsupport exif tag: " + tagAddress);
         }
     }
     return exif;
@@ -638,8 +633,8 @@ function sync(file) {
         //console.log("0x0b-0x0d:" + "0x" + data.toString("hex", 11, 13) + " | " + data.toString("ascii", 11, 13));//version
         return {};
     } else {
-        //throw new Error(maker + ": unsupport file maker.");
-        return {};
+        throw new Error("unsupport file maker: " + maker);
+        //return {};
     }
 }
 function async(file, callback) {
@@ -677,11 +672,11 @@ function async(file, callback) {
                 }
             }
         });
-    }, error=> {
+    }, error => {
         callback(error, undefined);
-    }).then(data=> {
+    }).then(data => {
         callback(undefined, data);
-    }).catch(error=> {
+    }).catch(error => {
         callback(error, undefined);
     });
 }
