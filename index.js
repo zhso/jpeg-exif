@@ -523,81 +523,91 @@ const fs = require("fs");
 exports.parse = async;
 exports.parseSync = sync;
 function ifds(data, cursor, tags, direction) {
-    let exif = {};
+    let exif;
     cursor += 2;
-    for (cursor; cursor < 12 * data.readUInt16BE(cursor) + cursor; cursor += 12) {
-        let tagAddress = direction ? data.toString("hex", cursor, cursor + 2) : data.slice(cursor, cursor + 2).reverse().toString("hex");
-        let tag = tags[tagAddress];//TTTT
-        let formatValue = direction ? data.readUInt16BE(cursor + 2) - 1 : data.readUInt16LE(cursor + 2) - 1;
-        let format = dataFormat[formatValue];//ffff
-        let componentBytes = bytes[direction ? data.readUInt16BE(cursor + 2) - 1 : data.readUInt16LE(cursor + 2) - 1];
-        let componentsNumber = direction ? data.readUInt32BE(cursor + 4) : data.readUInt32LE(cursor + 4);//NNNNNNNN
-        let size = componentsNumber * componentBytes;
-        let valueBuffer;
-        let valueAddress;//delete
-        if (size > 4) {
-            let offset = direction ? data.readUInt32BE(cursor + 8) : data.readUInt32LE(cursor + 8);//DDDDDDDD
-            valueBuffer = data.slice(12 + offset, 12 + offset + size);
-            valueAddress = "0x" + (12 + offset).toString(16) + "-0x" + (12 + offset + size).toString(16);//delete
-        } else {
-            valueBuffer = data.slice(cursor + 8, cursor + 12);//DDDDDDDD
-        }
-        let value;
-        if (tag) {
-            switch (format) {
-                case "unsigned byte":
-                    value = valueBuffer.readUInt8(0);
-                    break;
-                case "ascii strings":
-                    value = valueBuffer.toString("ascii").replace(/\u0000/g, "");
-                    break;
-                case "unsigned short":
-                    value = direction ? valueBuffer.readUInt16BE(0) : valueBuffer.readUInt16LE(0);
-                    break;
-                case "unsigned long":
-                    value = direction ? valueBuffer.readUInt32BE(0) : valueBuffer.readUInt32LE(0);
-                    break;
-                case "unsigned rational":
-                    let length = valueBuffer.length;
-                    value = [];
-                    for (let i = 0; i < length; i += 8) {
-                        value.push(direction ? valueBuffer.readUInt32BE(i) / valueBuffer.readUInt32BE(i + 4) : valueBuffer.readUInt32LE(i) / valueBuffer.readUInt32LE(i + 4));
-                    }
-                    break;
-                case "undefined":
-                    switch (tag) {
-                        case "ExifVersion":
-                            value = valueBuffer.toString();
-                            break;
-                        case "FlashPixVersion":
-                            value = valueBuffer.toString();
-                            break;
-                        case "SceneType":
-                            value = valueBuffer.readUInt8(0);
-                            break;
-                        default:
-                            value = "0x" + valueBuffer.toString("hex");
-                            break;
-                    }
-                    break;
-                case "signed rational":
-                    value = direction ? valueBuffer.readInt32BE(0) / valueBuffer.readInt32BE(4) : valueBuffer.readInt32LE(0) / valueBuffer.readInt32LE(4);
-                    break;
-                default:
-                    value = "0x" + valueBuffer.toString("hex");
-                    //throw new Error("unsupport data format: " + formatValue);
-                    break;
+    try {
+        for (cursor; cursor < 12 * data.readUInt16BE(cursor) + cursor; cursor += 12) {
+            let tagAddress = direction ? data.toString("hex", cursor, cursor + 2) : data.slice(cursor, cursor + 2).reverse().toString("hex");
+            let tag = tags[tagAddress];//TTTT
+            let formatValue = direction ? data.readUInt16BE(cursor + 2) - 1 : data.readUInt16LE(cursor + 2) - 1;
+            let format=dataFormat[formatValue];
+            //let format = dataFormat[data.readUInt16BE(cursor + 2) - 1]||dataFormat[data.readUInt16LE(cursor + 2) - 1];//ffff
+            //console.log(data.readUInt16BE(cursor + 2) - 1);
+            //console.log(data.readUInt16LE(cursor + 2) - 1);
+            let componentBytes = bytes[direction ? data.readUInt16BE(cursor + 2) - 1 : data.readUInt16LE(cursor + 2) - 1];
+            let componentsNumber = direction ? data.readUInt32BE(cursor + 4) : data.readUInt32LE(cursor + 4);//NNNNNNNN
+            let size = componentsNumber * componentBytes;
+            let valueBuffer;
+            //let valueAddress;//delete
+            if (size > 4) {
+                let offset = direction ? data.readUInt32BE(cursor + 8) : data.readUInt32LE(cursor + 8);//DDDDDDDD
+                valueBuffer = data.slice(12 + offset, 12 + offset + size);
+                //valueAddress = "0x" + (12 + offset).toString(16) + "-0x" + (12 + offset + size).toString(16);//delete
+            } else {
+                valueBuffer = data.slice(cursor + 8, cursor + 12);//DDDDDDDD
             }
-            /*console.log("-----------------------------------\n"
-             + tagAddress + ":" + tag
-             + "\n0x" + cursor.toString(16) + "-0x" + (cursor + 12).toString(16) + ":" + data.toString("hex", cursor, cursor + 12) + ">" + componentsNumber + "*" + componentBytes
-             + ( valueAddress ? "\n" + valueAddress + ":0x" + valueBuffer.toString("hex") : "")
-             + "\n" + format + ":" + value
-             + "\n-------------------------------------");*/
-            exif[tag] = value;
-        } else {
-            //throw new Error("unsupport exif tag: " + tagAddress);
+            let value;
+            if (tag) {
+                switch (format) {
+                    case "unsigned byte":
+                        value = valueBuffer.readUInt8(0);
+                        break;
+                    case "ascii strings":
+                        value = valueBuffer.toString("ascii").replace(/\u0000/g, "").trim();
+                        break;
+                    case "unsigned short":
+                        value = direction ? valueBuffer.readUInt16BE(0) : valueBuffer.readUInt16LE(0);
+                        break;
+                    case "unsigned long":
+                        value = direction ? valueBuffer.readUInt32BE(0) : valueBuffer.readUInt32LE(0);
+                        break;
+                    case "unsigned rational":
+                        let length = valueBuffer.length;
+                        value = [];
+                        for (let i = 0; i < length; i += 8) {
+                            value.push(direction ? valueBuffer.readUInt32BE(i) / valueBuffer.readUInt32BE(i + 4) : valueBuffer.readUInt32LE(i) / valueBuffer.readUInt32LE(i + 4));
+                        }
+                        break;
+                    case "undefined":
+                        switch (tag) {
+                            case "ExifVersion":
+                                value = valueBuffer.toString();
+                                break;
+                            case "FlashPixVersion":
+                                value = valueBuffer.toString();
+                                break;
+                            case "SceneType":
+                                value = valueBuffer.readUInt8(0);
+                                break;
+                            default:
+                                value = "0x" + valueBuffer.toString("hex", 0, 15);
+                                break;
+                        }
+                        break;
+                    case "signed rational":
+                        value = direction ? valueBuffer.readInt32BE(0) / valueBuffer.readInt32BE(4) : valueBuffer.readInt32LE(0) / valueBuffer.readInt32LE(4);
+                        break;
+                    default:
+                        value = "0x" + valueBuffer.toString("hex");
+                        //throw new Error("unsupport data format: " + formatValue);
+                        break;
+                }
+                /*console.log("-----------------------------------\n"
+                 + tagAddress + ":" + tag
+                 + "\n0x" + cursor.toString(16) + "-0x" + (cursor + 12).toString(16) + ":" + data.toString("hex", cursor, cursor + 12) + ">" + componentsNumber + "*" + componentBytes
+                 + ( valueAddress ? "\n" + valueAddress + ":0x" + valueBuffer.toString("hex") : "")
+                 + "\n" + format + ":" + value
+                 + "\n-------------------------------------");*/
+                if (!exif) {
+                    exif = {};
+                }
+                exif[tag] = value;
+            } else {
+                //throw new Error("unsupport exif tag: " + tagAddress);
+            }
         }
+    } catch (err) {
+        //
     }
     return exif;
 }
@@ -616,12 +626,11 @@ function sync(file) {
         //console.log("0x0c-0x0e:" + "0x" + data.toString("hex", 12, 14) + " | " + data.toString("ascii", 12, 14));//TTTT:MM
         //console.log("0x0e-0x10:" + "0x" + data.toString("hex", 14, 16));//0x002a
         //console.log("0x10-0x14:" + "0x" + data.toString("hex", 16, 20));//Offset to 1st. IFD
-        let exif;
         let direction = true;
         if (data.toString("ascii", 12, 14) === "II") {
             direction = false;
         }
-        exif = ifds(data, 20, ifdTags, direction);
+        let exif = ifds(data, 20, ifdTags, direction);
         exif.SubExif = ifds(data, parseInt(exif["ExifOffset"], 10) + 12, ifdTags, direction);
         if (exif.GPSInfo) {
             exif.GPSInfo = ifds(data, parseInt(exif.GPSInfo, 10) + 12, gpsTags, direction);
@@ -631,10 +640,8 @@ function sync(file) {
         //console.log("0x04-0x06:" + "0x" + data.toString("hex", 4, 6) + " | " + (data[4] * 256 + data[5]));//SSSS:Jfif data area
         //console.log("0x06-0x0b:" + "0x" + data.toString("hex", 6, 11) + " | " + data.toString("ascii", 6, 11));//Jfif Head
         //console.log("0x0b-0x0d:" + "0x" + data.toString("hex", 11, 13) + " | " + data.toString("ascii", 11, 13));//version
-        return {};
     } else {
         //throw new Error("unsupport file maker: " + maker);
-        return {};
     }
 }
 function async(file, callback) {
@@ -656,14 +663,20 @@ function async(file, callback) {
                     //console.log("0x0e-0x10:" + "0x" + data.toString("hex", 14, 16));//0x002a
                     //console.log("0x10-0x14:" + "0x" + data.toString("hex", 16, 20));//Offset to 1st. IFD
                     /*IFD0*/
-                    let exif = ifds(data, 20, ifdTags);
-                    exif.SubExif = ifds(data, parseInt(exif["ExifOffset"], 10) + 12, ifdTags);
-                    if (exif.GPSInfo) {
-                        exif.GPSInfo = ifds(data, parseInt(exif.GPSInfo, 10) + 12, gpsTags);
+                    let direction = true;
+                    if (data.toString("ascii", 12, 14) === "II") {
+                        direction = false;
+                    }
+                    let exif = ifds(data, 20, ifdTags, direction);
+                    if (exif && exif.ExifOffset) {
+                        exif.SubExif = ifds(data, parseInt(exif.ExifOffset, 10) + 12, ifdTags, direction);
+                    }
+                    if (exif && exif.GPSInfo) {
+                        exif.GPSInfo = ifds(data, parseInt(exif.GPSInfo, 10) + 12, gpsTags, direction);
                     }
                     resolve(exif);
                 } else if (maker === "ffe0") {
-                    resolve({});
+                    //resolve({});
                     //console.log("0x04-0x06:" + "0x" + data.toString("hex", 4, 6) + " | " + (data[4] * 256 + data[5]));//SSSS:Jfif data area
                     //console.log("0x06-0x0b:" + "0x" + data.toString("hex", 6, 11) + " | " + data.toString("ascii", 6, 11));//Jfif Head
                     //console.log("0x0b-0x0d:" + "0x" + data.toString("hex", 11, 13) + " | " + data.toString("ascii", 11, 13));//version
