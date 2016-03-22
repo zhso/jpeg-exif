@@ -1,24 +1,34 @@
 # jpeg-exif
-Get exif infomation from jpeg format file.
+Get exif information from jpeg format file.
 
+### Async
 
 ```js
-var exif = require("jpeg-exif");
-var file = "~/Photo/IMG_0001.JPG";
-exif.parse(file, function (err, data) {
+const exif = require("jpeg-exif");
+let file = "~/Photo/IMG_0001.JPG";
+exif.parse(file, (err, data) => {
     if (err) {
         console.log(err);
     } else {
         console.log(data);
     }
 });
+```
 
+### Sync
+
+```js
+const exif = require("jpeg-exif");
+let file = "~/Photo/IMG_0001.JPG";
+let data=exif.parseSync(file);
+console.log(data);
 ```
 
 ## Features
 
 * Support More Than 450 Exif Tags
 * Support GPSInfo Tags
+* Support Sync Method
 
 ## Installation
 
