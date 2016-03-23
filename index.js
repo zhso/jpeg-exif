@@ -484,18 +484,18 @@ const gpsTags = {
     "001f": "GPSHPositioningError"
 };
 const dataFormat = [
-    "unsigned byte",
-    "ascii strings",
-    "unsigned short",
-    "unsigned long",
-    "unsigned rational",
-    "signed byte",
+    "unsignedByte",
+    "asciiStrings",
+    "unsignedShort",
+    "unsignedLong",
+    "unsignedRational",
+    "signedByte",
     "undefined",
-    "signed short",
-    "signed long",
-    "signed rational",
-    "single float",
-    "double float"
+    "signedShort",
+    "signedLong",
+    "signedRational",
+    "singleFloat",
+    "doubleFloat"
 ];
 const bytes = [1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8];
 const fs = require("fs");
@@ -530,19 +530,19 @@ function ifds(data, cursor, tags, direction) {
             let value;
             if (tag) {
                 switch (format) {
-                    case "unsigned byte":
+                    case "unsignedByte":
                         value = valueBuffer.readUInt8(0);
                         break;
-                    case "ascii strings":
+                    case "asciiStrings":
                         value = valueBuffer.toString("ascii").replace(/\u0000/g, "").trim();
                         break;
-                    case "unsigned short":
+                    case "unsignedShort":
                         value = direction ? valueBuffer.readUInt16BE(0) : valueBuffer.readUInt16LE(0);
                         break;
-                    case "unsigned long":
+                    case "unsignedLong":
                         value = direction ? valueBuffer.readUInt32BE(0) : valueBuffer.readUInt32LE(0);
                         break;
-                    case "unsigned rational":
+                    case "unsignedRational":
                         let length = valueBuffer.length;
                         value = [];
                         for (let i = 0; i < length; i += 8) {
@@ -565,7 +565,7 @@ function ifds(data, cursor, tags, direction) {
                                 break;
                         }
                         break;
-                    case "signed rational":
+                    case "signedRational":
                         value = direction ? valueBuffer.readInt32BE(0) / valueBuffer.readInt32BE(4) : valueBuffer.readInt32LE(0) / valueBuffer.readInt32LE(4);
                         break;
                     default:
