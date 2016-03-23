@@ -602,12 +602,11 @@ function sync(file) {
             exif.SubExif = ifds(data, parseInt(exif.ExifOffset, 10) + 12, ifdTags, direction);
         }
         if (exif && exif.GPSInfo) {
-            exif.GPSInfo && (exif.GPSInfo = ifds(data, parseInt(exif.GPSInfo, 10) + 12, gpsTags, direction));
+            exif.GPSInfo = ifds(data, parseInt(exif.GPSInfo, 10) + 12, gpsTags, direction);
         }
         return exif;
-    } else if (maker === "ffe0") {
-        //TODO: JFIF
     }
+    /*else if (maker === "ffe0") { }*/
 }
 /**
  * @param file {String}
@@ -634,7 +633,6 @@ function async(file, callback) {
                     }
                     resolve(exif);
                 } else if (maker === "ffe0") {
-                    //TODO: JFIF
                     resolve();
                 } else {
                     reject("unsupport file type.");
