@@ -598,8 +598,8 @@ function sync(file) {
     if (maker === "ffe1") {
         let direction = data.toString("ascii", 12, 14) !== "II";
         let exif = ifds(data, 20, ifdTags, direction);
-        if (exif && exif["ExifOffset"]) {
-            exif.SubExif = ifds(data, parseInt(exif["ExifOffset"], 10) + 12, ifdTags, direction);
+        if (exif && exif.ExifOffset) {
+            exif.SubExif = ifds(data, parseInt(exif.ExifOffset, 10) + 12, ifdTags, direction);
         }
         if (exif && exif.GPSInfo) {
             exif.GPSInfo && (exif.GPSInfo = ifds(data, parseInt(exif.GPSInfo, 10) + 12, gpsTags, direction));
@@ -626,11 +626,11 @@ function async(file, callback) {
                 if (maker === "ffe1") {
                     let direction = data.toString("ascii", 12, 14) !== "II";
                     let exif = ifds(data, 20, ifdTags, direction);
-                    if (exif && exif["ExifOffset"]) {
-                        exif.SubExif = ifds(data, parseInt(exif["ExifOffset"], 10) + 12, ifdTags, direction);
+                    if (exif && exif.ExifOffset) {
+                        exif.SubExif = ifds(data, parseInt(exif.ExifOffset, 10) + 12, ifdTags, direction);
                     }
-                    if (exif && exif["GPSInfo"]) {
-                        exif.GPSInfo = ifds(data, parseInt(exif["GPSInfo"], 10) + 12, gpsTags, direction);
+                    if (exif && exif.GPSInfo) {
+                        exif.GPSInfo = ifds(data, parseInt(exif.GPSInfo, 10) + 12, gpsTags, direction);
                     }
                     resolve(exif);
                 } else if (maker === "ffe0") {
