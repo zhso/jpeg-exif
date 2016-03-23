@@ -501,6 +501,13 @@ const bytes = [1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8];
 const fs = require("fs");
 exports.parse = async;
 exports.parseSync = sync;
+/**
+ * @param data {Buffer}
+ * @param cursor {Number}
+ * @param tags {Object}
+ * @param direction {Boolean}
+ * @returns {Object}
+ */
 function ifds(data, cursor, tags, direction) {
     let exif;
     cursor += 2;
@@ -580,6 +587,10 @@ function ifds(data, cursor, tags, direction) {
     }
     return exif;
 }
+/**
+ * @param file {String}
+ * @returns {Object}
+ */
 function sync(file) {
     if (!file) {
         throw new Error("Please give me the file.");
@@ -600,6 +611,10 @@ function sync(file) {
         //TODO: JFIF
     }
 }
+/**
+ * @param file {String}
+ * @param callback {Function}
+ */
 function async(file, callback) {
     if (!file) {
         throw new Error("Please give me the file.");
