@@ -499,8 +499,6 @@ const dataFormat = [
 ];
 const bytes = [1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8];
 const fs = require("fs");
-exports.parse = async;
-exports.parseSync = sync;
 /**
  * @param data {Buffer}
  * @param cursor {Number}
@@ -651,3 +649,5 @@ function async(file, callback) {
         callback(error, undefined);
     });
 }
+exports.parse = async;
+exports.parseSync = sync;
