@@ -483,20 +483,7 @@ const gpsTags = {
     "001e": "GPSDifferential",
     "001f": "GPSHPositioningError"
 };
-const dataFormat = [
-    "unsignedByte",
-    "asciiStrings",
-    "unsignedShort",
-    "unsignedLong",
-    "unsignedRational",
-    "signedByte",
-    "undefined",
-    "signedShort",
-    "signedLong",
-    "signedRational",
-    "singleFloat",
-    "doubleFloat"
-];
+//unsignedByte,asciiStrings,unsignedShort,unsignedLong,unsignedRational,signedByte,undefined,signedShort,signedLong,signedRational,singleFloat,doubleFloat;
 const bytes = [1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8];
 const fs = require("fs");
 /**
@@ -514,42 +501,39 @@ function ifds(data, cursor, tags, direction) {
             let tagAddress = direction ? data.toString("hex", cursor, cursor + 2) : data.slice(cursor, cursor + 2).reverse().toString("hex");
             let tag = tags[tagAddress];//TTTT
             let formatValue = direction ? data.readUInt16BE(cursor + 2) - 1 : data.readUInt16LE(cursor + 2) - 1;
-            let format = dataFormat[formatValue];
             let componentBytes = bytes[direction ? data.readUInt16BE(cursor + 2) - 1 : data.readUInt16LE(cursor + 2) - 1];
             let componentsNumber = direction ? data.readUInt32BE(cursor + 4) : data.readUInt32LE(cursor + 4);//NNNNNNNN
             let size = componentsNumber * componentBytes;
             let valueBuffer;
-            //let valueAddress;//delete
             if (size > 4) {
                 let offset = direction ? data.readUInt32BE(cursor + 8) : data.readUInt32LE(cursor + 8);//DDDDDDDD
                 valueBuffer = data.slice(12 + offset, 12 + offset + size);
-                //valueAddress = "0x" + (12 + offset).toString(16) + "-0x" + (12 + offset + size).toString(16);//delete
             } else {
                 valueBuffer = data.slice(cursor + 8, cursor + 12);//DDDDDDDD
             }
             let value;
             if (tag) {
-                switch (format) {
-                    case "unsignedByte":
+                switch (formatValue) {
+                    case 0:
                         value = valueBuffer.readUInt8(0);
                         break;
-                    case "asciiStrings":
+                    case 1:
                         value = valueBuffer.toString("ascii").replace(/\u0000/g, "").trim();
                         break;
-                    case "unsignedShort":
+                    case 2:
                         value = direction ? valueBuffer.readUInt16BE(0) : valueBuffer.readUInt16LE(0);
                         break;
-                    case "unsignedLong":
+                    case 3:
                         value = direction ? valueBuffer.readUInt32BE(0) : valueBuffer.readUInt32LE(0);
                         break;
-                    case "unsignedRational":
+                    case 4:
                         let length = valueBuffer.length;
                         value = [];
                         for (let i = 0; i < length; i += 8) {
                             value.push(direction ? valueBuffer.readUInt32BE(i) / valueBuffer.readUInt32BE(i + 4) : valueBuffer.readUInt32LE(i) / valueBuffer.readUInt32LE(i + 4));
                         }
                         break;
-                    case "undefined":
+                    case 6:
                         switch (tag) {
                             case "ExifVersion":
                                 value = valueBuffer.toString();
@@ -565,7 +549,7 @@ function ifds(data, cursor, tags, direction) {
                                 break;
                         }
                         break;
-                    case "signedRational":
+                    case 9:
                         value = direction ? valueBuffer.readInt32BE(0) / valueBuffer.readInt32BE(4) : valueBuffer.readInt32LE(0) / valueBuffer.readInt32LE(4);
                         break;
                     default:
