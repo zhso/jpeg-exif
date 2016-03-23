@@ -1,7 +1,7 @@
 # jpeg-exif
 Get exif information from jpeg format file.
 
-[![NPM](https://nodei.co/npm/jpeg-exif.png?downloads=true&downloadRank=true&stars=true)][git-url] [![NPM](https://nodei.co/npm-dl/jpeg-exif.png?height=3&month=12)][git-url]
+[![NPM](https://nodei.co/npm/jpeg-exif.png?downloads=true&downloadRank=true&stars=true)][git-url] [![NPM](https://nodei.co/npm-dl/jpeg-exif.png?height=3&months=12)][git-url]
 
 [![npm](https://img.shields.io/npm/v/jpeg-exif.svg)][git-url] [![npm](https://img.shields.io/npm/dm/jpeg-exif.svg)][git-url] [![npm](https://david-dm.org/zhso/jpeg-exif.svg)][git-url] [![npm](https://img.shields.io/npm/l/jpeg-exif.svg)][git-url]
 
