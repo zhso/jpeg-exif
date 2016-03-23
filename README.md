@@ -5,6 +5,8 @@ Get exif information from jpeg format file.
 
 [![npm](https://img.shields.io/npm/v/jpeg-exif.svg)][git-url] [![npm](https://img.shields.io/npm/dm/jpeg-exif.svg)][git-url] [![npm](https://david-dm.org/zhso/jpeg-exif.svg)][git-url] [![npm](https://img.shields.io/npm/l/jpeg-exif.svg)][git-url]
 
+[![bitHound Overall Score](https://www.bithound.io/github/zhso/jpeg-exif/badges/score.svg)](https://www.bithound.io/github/zhso/jpeg-exif)
+
 [![GitHub stars](https://img.shields.io/github/stars/zhso/jpeg-exif.svg?style=social&label=Star)][git-url] [![GitHub watchers](https://img.shields.io/github/watchers/zhso/jpeg-exif.svg?style=social&label=Watch)][git-url]
 
 [git-url]: https://npmjs.org/package/jpeg-exif
