@@ -25,5 +25,8 @@
     "email": "s@zhso.net"
   },
   "author": "s@zhso.net",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^2.4.0"
+  }
 }
