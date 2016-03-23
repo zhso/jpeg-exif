@@ -527,9 +527,8 @@ function ifds(data, cursor, tags, direction) {
                         value = direction ? valueBuffer.readUInt32BE(0) : valueBuffer.readUInt32LE(0);
                         break;
                     case 4:
-                        let length = valueBuffer.length;
                         value = [];
-                        for (let i = 0; i < length; i += 8) {
+                        for (let i = 0; i < valueBuffer.length; i += 8) {
                             value.push(direction ? valueBuffer.readUInt32BE(i) / valueBuffer.readUInt32BE(i + 4) : valueBuffer.readUInt32LE(i) / valueBuffer.readUInt32LE(i + 4));
                         }
                         break;
