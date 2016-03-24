@@ -6,8 +6,26 @@ describe(".parse()", () => {
         expect(exif.parse).to.throw(Error);
     });
     it("APP:#0xffe1", done=> {
-        exif.parse("./IMG_0001.JPG", (err, data) => {
+        exif.parse("./test/IMG_0001.JPG", (err, data) => {
             expect(data).to.be.an("object");
+            done();
+        });
+    });
+    it("[SubExif]", done=> {
+        exif.parse("./test/IMG_0001.JPG", (err, data)=> {
+            expect(data.SubExif).to.be.an("object");
+            done();
+        });
+    });
+    it("[GPSInfo]", done=> {
+        exif.parse("./test/IMG_0001.JPG", (err, data)=> {
+            expect(data.GPSInfo).to.be.an("object");
+            done();
+        });
+    });
+    it("!APP1:#0xffe1", done=> {
+        exif.parse("./test/IMG_0003.JPG", (err, data)=> {
+            expect(data).to.be.an("undefined");
             done();
         });
     });
