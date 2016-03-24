@@ -9,6 +9,10 @@ const fs = require("fs");
  * @param tags {Object}
  * @param direction {Boolean}
  * @returns {Object}
+ * @example
+ * var content = fs.readFileSync("~/Picture/IMG_0911.JPG");
+ * var exifFragments = ifds(content, 0, [{ "key": "value" }], true);
+ * console.log(exifFragments.value);
  */
 function ifds(data, cursor, tags, direction) {
     let exif;
@@ -88,6 +92,9 @@ function ifds(data, cursor, tags, direction) {
 /**
  * @param file {String}
  * @returns {Object}
+ * @example
+ * var exif = sync("~/Picture/IMG_1981.JPG");
+ * console.log(exif.createTime);
  */
 function sync(file) {
     if (!file) {
@@ -111,6 +118,15 @@ function sync(file) {
 /**
  * @param file {String}
  * @param callback {Function}
+ * @example
+ * async("~/Picture/IMG_0707.JPG", (err, data) => {
+ *     if(err) {
+ *         console.log(err);
+ *     }
+ *     if(data) {
+ *         console.log(data.ExifOffset.createTime);
+ *     }
+ * }
  */
 function async(file, callback) {
     if (!file) {

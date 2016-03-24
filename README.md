@@ -1,15 +1,15 @@
 # jpeg-exif
 Get exif information from jpeg format file.
 
-[![NPM](https://nodei.co/npm/jpeg-exif.png?downloads=true&downloadRank=true&stars=true)][git-url] [![NPM](https://nodei.co/npm-dl/jpeg-exif.png?height=3&months=6)][git-url]
+[![NPM](https://nodei.co/npm/jpeg-exif.png?downloads=true&downloadRank=true&stars=true)][npm-url] [![NPM](https://nodei.co/npm-dl/jpeg-exif.png?height=3&months=6)][npm-url]
 
-[![npm](https://img.shields.io/npm/v/jpeg-exif.svg)][git-url] [![npm](https://img.shields.io/npm/dm/jpeg-exif.svg)][git-url] [![npm](https://david-dm.org/zhso/jpeg-exif.svg)][git-url] [![npm](https://img.shields.io/npm/l/jpeg-exif.svg)][git-url]
+[![npm](https://img.shields.io/npm/v/jpeg-exif.svg)][npm-url] [![npm](https://img.shields.io/npm/dm/jpeg-exif.svg)][npm-url][![npm](https://david-dm.org/zhso/jpeg-exif.svg)][npm-url] [![npm](https://img.shields.io/npm/l/jpeg-exif.svg)][npm-url]
 
 [![bitHound Overall Score](https://www.bithound.io/github/zhso/jpeg-exif/badges/score.svg)](https://www.bithound.io/github/zhso/jpeg-exif)
 
-[![GitHub stars](https://img.shields.io/github/stars/zhso/jpeg-exif.svg?style=social&label=Star)][git-url] [![GitHub watchers](https://img.shields.io/github/watchers/zhso/jpeg-exif.svg?style=social&label=Watch)][git-url]
+[![GitHub stars](https://img.shields.io/github/stars/zhso/jpeg-exif.svg?style=social&label=Star)](https://github.com/zhso/jpeg-exif/stargazers) [![GitHub watchers](https://img.shields.io/github/watchers/zhso/jpeg-exif.svg?style=social&label=Watch)](https://github.com/zhso/jpeg-exif/subscription)
 
-[git-url]: https://npmjs.org/package/jpeg-exif
+[npm-url]: https://npmjs.org/package/jpeg-exif
 ### Async
 
 ```js
