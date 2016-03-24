@@ -113,7 +113,6 @@ function sync(file) {
         }
         return exif;
     }
-    /*else if (maker === "ffe0") { }*/
 }
 /**
  * @param file {String}
