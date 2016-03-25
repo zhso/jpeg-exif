@@ -5,7 +5,7 @@ Get exif information from jpeg format file.
 
 [![npm](https://img.shields.io/npm/v/jpeg-exif.svg)][npm-url] [![npm](https://img.shields.io/npm/dm/jpeg-exif.svg)][npm-url] [![npm](https://david-dm.org/zhso/jpeg-exif.svg)][npm-url] [![npm](https://img.shields.io/npm/l/jpeg-exif.svg)][npm-url]
 
-[![bitHound Overall Score](https://www.bithound.io/github/zhso/jpeg-exif/badges/score.svg)](https://www.bithound.io/github/zhso/jpeg-exif) [![Inline docs](http://inch-ci.org/github/zhso/jpeg-exif.svg?branch=master&style=shields)](http://inch-ci.org/github/zhso/jpeg-exif)
+[![bitHound Overall Score](https://www.bithound.io/github/zhso/jpeg-exif/badges/score.svg)](https://www.bithound.io/github/zhso/jpeg-exif) [![Inline docs](http://inch-ci.org/github/zhso/jpeg-exif.svg?branch=master&style=shields)](http://inch-ci.org/github/zhso/jpeg-exif) [![Build Status](https://travis-ci.org/zhso/jpeg-exif.svg?branch=master)](https://travis-ci.org/zhso/jpeg-exif) [![Coverage Status](https://coveralls.io/repos/github/zhso/jpeg-exif/badge.svg?branch=master)](https://coveralls.io/github/zhso/jpeg-exif?branch=master)
 
 [![GitHub stars](https://img.shields.io/github/stars/zhso/jpeg-exif.svg?style=social&label=Star)](https://github.com/zhso/jpeg-exif/stargazers) [![GitHub watchers](https://img.shields.io/github/watchers/zhso/jpeg-exif.svg?style=social&label=Watch)](https://github.com/zhso/jpeg-exif/subscription)
 

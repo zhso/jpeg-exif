@@ -1,3 +1,7 @@
 language: node_js
 node_js:
   - "5"
+before_script:
+  - "npm i mocha chai coveralls istanbul"
+after_success:
+  - "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage && npm uninstall mocha chai istanbul coveralls"
