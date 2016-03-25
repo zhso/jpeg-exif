@@ -5,7 +5,7 @@ describe(".parse()", () => {
     it("file {undefined}", ()=> {
         expect(exif.parse).to.throw(Error);
     });
-    it("APP:#0xffe1", done=> {
+    it("APP1:#0xffe1", done=> {
         exif.parse("./test/IMG_0001.JPG", (err, data) => {
             expect(data).to.be.an("object");
             done();

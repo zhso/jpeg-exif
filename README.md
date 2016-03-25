@@ -1,9 +1,9 @@
 # jpeg-exif
 Get exif information from jpeg format file.
 
-[![NPM](https://nodei.co/npm/jpeg-exif.png?downloads=true&downloadRank=true&stars=true)][npm-url] [![NPM](https://nodei.co/npm-dl/jpeg-exif.png?height=3&months=6)][npm-url]
+[![NPM](https://nodei.co/npm/jpeg-exif.png?downloads=true&downloadRank=true&stars=true)][npm-url][![NPM](https://nodei.co/npm-dl/jpeg-exif.png?height=3&months=6)][npm-url]
 
-[![npm](https://img.shields.io/npm/v/jpeg-exif.svg)][npm-url] [![npm](https://img.shields.io/npm/dm/jpeg-exif.svg)][npm-url][![npm](https://david-dm.org/zhso/jpeg-exif.svg)][npm-url] [![npm](https://img.shields.io/npm/l/jpeg-exif.svg)][npm-url]
+[![npm](https://img.shields.io/npm/v/jpeg-exif.svg)][npm-url] [![npm](https://img.shields.io/npm/dm/jpeg-exif.svg)][npm-url] [![npm](https://david-dm.org/zhso/jpeg-exif.svg)][npm-url] [![npm](https://img.shields.io/npm/l/jpeg-exif.svg)][npm-url]
 
 [![bitHound Overall Score](https://www.bithound.io/github/zhso/jpeg-exif/badges/score.svg)](https://www.bithound.io/github/zhso/jpeg-exif) [![Inline docs](http://inch-ci.org/github/zhso/jpeg-exif.svg?branch=master&style=shields)](http://inch-ci.org/github/zhso/jpeg-exif)
 
@@ -42,7 +42,7 @@ console.log(data);
 ## Installation
 
 ```bash
-$ npm install jpeg-exif
+$ npm i jpeg-exif
 ```
 
 ## Callback Data Format
