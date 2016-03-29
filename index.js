@@ -80,8 +80,6 @@ function ifds(data, cursor, tags, direction) {
                     exif = {};
                 }
                 exif[tag] = value;
-            } else {
-                //throw new Error("unsupport exif tag: " + tagAddress);
             }
         }
     } catch (err) {
