@@ -1,4 +1,5 @@
 "use strict";
+require("mocha");
 const exif = require("./../index.js");
 const expect = require("chai").expect;
 describe(".parse()", () => {
