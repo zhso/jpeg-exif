@@ -4,4 +4,4 @@ node_js:
 before_script:
   - "npm i mocha chai coveralls istanbul"
 after_success:
-  - "cat ./coverage/lcov.info | ./node_modules/.bin/coveralls && rm -rf ./coverage && npm r mocha chai istanbul coveralls"
+  - "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage && npm r mocha chai istanbul coveralls"
