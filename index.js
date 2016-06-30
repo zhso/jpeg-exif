@@ -14,11 +14,13 @@ const fs = require("fs");
  * var exifFragments = ifds(content, 0, [{ "key": "value" }], true);
  * console.log(exifFragments.value);
  */
-function ifds(data, cursor, tags, direction) {
+function ifds(data, cursor, tags, direction, entryNumber) {
     let exif;
     cursor += 2;
+    let entryCount = 0;
     try {
-        for (cursor; cursor < 12 * data.readUInt16BE(cursor) + cursor; cursor += 12) {
+        for (cursor; cursor < 12 * data.readUInt16BE(cursor) + cursor, entryCount < entryNumber; cursor += 12) {
+            entryCount++;
             let tagAddress = direction ? data.toString("hex", cursor, cursor + 2) : data.slice(cursor, cursor + 2).reverse().toString("hex");
             let tag = tags[tagAddress];//TTTT
             let formatValue = direction ? data.readUInt16BE(cursor + 2) - 1 : data.readUInt16LE(cursor + 2) - 1;
@@ -135,9 +137,10 @@ function async(file, callback) {
                 reject(err);
             } else {
                 let maker = data.toString("hex", 2, 4);
+                let entryNumber = data.readUInt8(20);
                 if (maker === "ffe1") {
                     let direction = data.toString("ascii", 12, 14) !== "II";
-                    let exif = ifds(data, 20, tags.ifd, direction);
+                    let exif = ifds(data, 20, tags.ifd, direction, entryNumber);
                     if (exif && exif.ExifOffset) {
                         exif.SubExif = ifds(data, parseInt(exif.ExifOffset, 10) + 12, tags.ifd, direction);
                     }
