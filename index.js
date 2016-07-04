@@ -27,12 +27,14 @@ function ifds(data, cursor, tags, direction, entryNumber) {
             let componentBytes = bytes[direction ? data.readUInt16BE(cursor + 2) - 1 : data.readUInt16LE(cursor + 2) - 1];
             let componentsNumber = direction ? data.readUInt32BE(cursor + 4) : data.readUInt32LE(cursor + 4);//NNNNNNNN
             let size = componentsNumber * componentBytes;
+
             let valueBuffer;
             if (size > 4) {
                 let offset = direction ? data.readUInt32BE(cursor + 8) : data.readUInt32LE(cursor + 8);//DDDDDDDD
-                valueBuffer = data.slice(12 + offset, 12 + offset + size);
+                valueBuffer = data.slice(cursor + offset - 4, cursor + offset + size - 4);
             } else {
                 valueBuffer = data.slice(cursor + 8, cursor + 12);//DDDDDDDD
+
             }
             let value;
             if (tag) {
@@ -101,17 +103,52 @@ function sync(file) {
         throw new Error("Please give me the file.");
     }
     let data = fs.readFileSync(file);
-    let maker = data.toString("hex", 2, 4);
-    if (maker === "ffe1") {
-        let direction = data.toString("ascii", 12, 14) !== "II";
-        let exif = ifds(data, 20, tags.ifd, direction);
-        if (exif && exif.ExifOffset) {
-            exif.SubExif = ifds(data, parseInt(exif.ExifOffset, 10) + 12, tags.ifd, direction);
+    const SOIMarkerLength = 2;
+    const APPMarkerLength = 2;
+    let APPMarkerTag = data.toString("hex", SOIMarkerLength, SOIMarkerLength + APPMarkerLength);
+    if (APPMarkerTag === "ffe1") {
+        let entryNumber = data.readUInt8(20);
+        if (entryNumber > 0) {
+            let direction = data.toString("ascii", 12, 14) !== "II";
+            let exif = ifds(data, 20, tags.ifd, direction, entryNumber);
+            if (exif && exif.ExifOffset) {
+                exif.SubExif = ifds(data, parseInt(exif.ExifOffset, 10) + 12, tags.ifd, direction);
+            }
+            if (exif && exif.GPSInfo) {
+                exif.GPSInfo = ifds(data, parseInt(exif.GPSInfo, 10) + 12, tags.gps, direction);
+            }
+            return exif;
+        } else {
+            return {};
         }
-        if (exif && exif.GPSInfo) {
-            exif.GPSInfo = ifds(data, parseInt(exif.GPSInfo, 10) + 12, tags.gps, direction);
+    } else if (maker === "ffe0") {
+        /*JFIF format*/
+        /*
+         ffd8 ffe0 xxxx 4a46494600 xxxx xx xxxx xxxx xx xx
+         SOI APP0 len   id    JFIF ver  u  x    y    x  y
+         */
+
+
+        let APP0Length = data.readUInt16BE(SOILength + APP0TagLength);
+
+        let APP0Tag = data.toString("hex", SOILength + APPTagLength + APP0Length, SOILength + APPTagLength + APP0Length + APP1TagLength);
+        if (maker === "ffe1") {
+            let entryNumber = data.readUInt8(38);
+            if (entryNumber > 0) {
+                let direction = data.toString("ascii", 30, 32) !== "II";
+                let exif = ifds(data, 38, tags.ifd, direction, entryNumber);
+                if (exif && exif.ExifOffset) {
+                    exif.SubExif = ifds(data, parseInt(exif.ExifOffset, 10) + 12, tags.ifd, direction);
+                }
+                return exif;
+            } else {
+                return {};
+            }
+        } else {
+            return {};
         }
-        return exif;
+    } else {
+        throw new Error("Unsupport file type.");
     }
 }
 /**
@@ -137,19 +174,39 @@ function async(file, callback) {
                 reject(err);
             } else {
                 let maker = data.toString("hex", 2, 4);
-                let entryNumber = data.readUInt8(20);
                 if (maker === "ffe1") {
-                    let direction = data.toString("ascii", 12, 14) !== "II";
-                    let exif = ifds(data, 20, tags.ifd, direction, entryNumber);
-                    if (exif && exif.ExifOffset) {
-                        exif.SubExif = ifds(data, parseInt(exif.ExifOffset, 10) + 12, tags.ifd, direction);
+                    let entryNumber = data.readUInt8(20);
+                    if (entryNumber > 0) {
+                        let direction = data.toString("ascii", 12, 14) !== "II";
+                        let exif = ifds(data, 20, tags.ifd, direction, entryNumber);
+                        if (exif && exif.ExifOffset) {
+                            exif.SubExif = ifds(data, parseInt(exif.ExifOffset, 10) + 12, tags.ifd, direction);
+                        }
+                        if (exif && exif.GPSInfo) {
+                            exif.GPSInfo = ifds(data, parseInt(exif.GPSInfo, 10) + 12, tags.gps, direction);
+                        }
+                        resolve(exif);
+                    } else {
+                        resolve({});
                     }
-                    if (exif && exif.GPSInfo) {
-                        exif.GPSInfo = ifds(data, parseInt(exif.GPSInfo, 10) + 12, tags.gps, direction);
-                    }
-                    resolve(exif);
                 } else if (maker === "ffe0") {
-                    resolve();
+
+                    maker = data.toString("hex", 20, 22);
+                    if (maker === "ffe1") {
+                        let entryNumber = data.readUInt8(38);
+                        if (entryNumber > 0) {
+                            let direction = data.toString("ascii", 30, 32) !== "II";
+                            let exif = ifds(data, 38, tags.ifd, direction, entryNumber);
+                            if (exif && exif.ExifOffset) {
+                                exif.SubExif = ifds(data, parseInt(exif.ExifOffset, 10) + 12, tags.ifd, direction);
+                            }
+                            resolve(exif);
+                        } else {
+                            resolve({});
+                        }
+                    } else {
+                        resolve({});
+                    }
                 } else {
                     reject("unsupport file type.");
                 }
