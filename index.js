@@ -1,7 +1,7 @@
 "use strict";
 const tags = require("./tags.json");
 //unsignedByte,asciiStrings,unsignedShort,unsignedLong,unsignedRational,signedByte,undefined,signedShort,signedLong,signedRational,singleFloat,doubleFloat;
-const bytes = [1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8];
+const bytes = [0, 1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8];
 const fs = require("fs");
 /**
  * @param data {Buffer}
@@ -14,76 +14,96 @@ const fs = require("fs");
  * var exifFragments = ifds(content, 0, [{ "key": "value" }], true);
  * console.log(exifFragments.value);
  */
-function ifds(data, cursor, tags, direction, entryNumber) {
+function IFDHandler(IFD, tags, order) {
+    console.log(IFD);
+    let entryNumber = IFD.readUInt8(0);
+    let entryBegin = 2;
+    let entries = IFD.slice(entryBegin);
     let exif;
-    cursor += 2;
     let entryCount = 0;
+    const entryLength = 12;
     try {
-        for (cursor; cursor < 12 * data.readUInt16BE(cursor) + cursor, entryCount < entryNumber; cursor += 12) {
-            entryCount++;
-            let tagAddress = direction ? data.toString("hex", cursor, cursor + 2) : data.slice(cursor, cursor + 2).reverse().toString("hex");
-            let tag = tags[tagAddress];//TTTT
-            let formatValue = direction ? data.readUInt16BE(cursor + 2) - 1 : data.readUInt16LE(cursor + 2) - 1;
-            let componentBytes = bytes[direction ? data.readUInt16BE(cursor + 2) - 1 : data.readUInt16LE(cursor + 2) - 1];
-            let componentsNumber = direction ? data.readUInt32BE(cursor + 4) : data.readUInt32LE(cursor + 4);//NNNNNNNN
-            let size = componentsNumber * componentBytes;
+        for (entryCount; entryCount < entryNumber; entryCount++) {
+            let tagBegin = entryCount * entryLength;
+            let entry = entries.slice(tagBegin, tagBegin + entryLength);
+            console.log(`${entry.toString("hex", 0, 2)} ${entry.toString("hex", 2, 4)} ${entry.toString("hex", 4, 8)} ${entry.toString("hex", 8, 12)}`.toUpperCase());
+            const tagLength = 2;
+            const dataFormatLength = 2;
+            const componentsNumberLength = 4;
+            const dataValueLength = 4;
 
-            let valueBuffer;
-            if (size > 4) {
-                let offset = direction ? data.readUInt32BE(cursor + 8) : data.readUInt32LE(cursor + 8);//DDDDDDDD
-                valueBuffer = data.slice(cursor + offset - 4, cursor + offset + size - 4);
+            let formatBegin = tagBegin + tagLength;
+            let tagAddress = entry.slice(tagBegin, formatBegin);
+            let tagNumber = order ? tagAddress.reverse().toString("hex") : tagAddress.toString("hex");
+            let tagName = tags[tagNumber];
+
+            let dataFormat = order ? entry.readUInt16LE(formatBegin) : entry.readUInt16BE(formatBegin);
+            let componentsBegin = formatBegin + dataFormatLength;
+            let componentsByte = bytes[dataFormat];
+            let componentsNumber = order ? entry.readUInt32LE(componentsBegin) : entry.readUInt32BE(componentsBegin);
+
+            let dataLength = componentsNumber * componentsByte;
+            let dataBegin = componentsBegin + componentsNumberLength;
+            let dataValue = entry.slice(dataBegin, dataBegin + dataValueLength);
+            if (dataLength > 4) {
+                let dataOffset = order ? dataValue.readUInt32LE() : dataValue.readUInt32BE();
+                dataValue = IFD.slice(dataOffset - entryBegin, dataOffset + dataLength - entryBegin);
+                console.log(dataValue);
             } else {
-                valueBuffer = data.slice(cursor + 8, cursor + 12);//DDDDDDDD
-
+                console.log("-------------------------------------------------------------");
             }
-            let value;
-            if (tag) {
-                switch (formatValue) {
+            console.log(`${tagName} : ${dataValue.toString("ascii")}`);
+            let tagValue;
+            if (tagName) {
+                console.log(dataFormat);
+                switch (dataFormat) {
                     case 0:
-                        value = valueBuffer.readUInt8(0);
+                        tagValue = dataValue.readUInt8();
                         break;
                     case 1:
-                        value = valueBuffer.toString("ascii").replace(/\u0000/g, "").trim();
+                        tagValue = dataValue.toString("ascii").replace(/\u0000/g, "").trim();
                         break;
                     case 2:
-                        value = direction ? valueBuffer.readUInt16BE(0) : valueBuffer.readUInt16LE(0);
+                        tagValue = order ? dataValue.readUInt16LE() : dataValue.readUInt16BE();
                         break;
                     case 3:
-                        value = direction ? valueBuffer.readUInt32BE(0) : valueBuffer.readUInt32LE(0);
+                        tagValue = order ? dataValue.readUInt32BE() : dataValue.readUInt32LE();
                         break;
                     case 4:
-                        value = [];
-                        for (let i = 0; i < valueBuffer.length; i += 8) {
-                            value.push(direction ? valueBuffer.readUInt32BE(i) / valueBuffer.readUInt32BE(i + 4) : valueBuffer.readUInt32LE(i) / valueBuffer.readUInt32LE(i + 4));
+                        tagValue = [];
+                        for (let i = 0; i < dataValue.length; i += 8) {
+                            value.push(order ? dataValue.readUInt32BE(i) / dataValue.readUInt32BE(i + 4) : dataValue.readUInt32LE(i) / dataValue.readUInt32LE(i + 4));
                         }
                         break;
                     case 6:
                         switch (tag) {
                             case "ExifVersion":
-                                value = valueBuffer.toString();
+                                tagValue = dataValue.toString();
                                 break;
                             case "FlashPixVersion":
-                                value = valueBuffer.toString();
+                                tagValue = dataValue.toString();
                                 break;
                             case "SceneType":
-                                value = valueBuffer.readUInt8(0);
+                                tagValue = dataValue.readUInt8(0);
                                 break;
                             default:
-                                value = "0x" + valueBuffer.toString("hex", 0, 15);
+                                tagValue = "0x" + dataValue.toString("hex", 0, 15);
                                 break;
                         }
                         break;
                     case 9:
-                        value = direction ? valueBuffer.readInt32BE(0) / valueBuffer.readInt32BE(4) : valueBuffer.readInt32LE(0) / valueBuffer.readInt32LE(4);
+                        tagValue = order ? dataValue.readInt32BE(0) / dataValue.readInt32BE(4) : dataValue.readInt32LE(0) / dataValue.readInt32LE(4);
                         break;
                     default:
-                        value = "0x" + valueBuffer.toString("hex");
+                        tagValue = "0x" + dataValue.toString("hex");
                         break;
                 }
                 if (!exif) {
                     exif = {};
                 }
-                exif[tag] = value;
+                exif[tagName] = tagValue;
+            } else {
+                throw new Error("unkown tag name");
             }
         }
     } catch (err) {
@@ -104,41 +124,52 @@ function sync(file) {
     }
     let data = fs.readFileSync(file);
     const SOIMarkerLength = 2;
+    const JPEGSOIMarker = "ffd8";
+    const JFIFMarker = "ffe0";
+    const EXIFMarker = "ffe1";
     const APPMarkerLength = 2;
+    let SOIMarker = data.toString("hex", 0, SOIMarkerLength);
     let APPMarkerTag = data.toString("hex", SOIMarkerLength, SOIMarkerLength + APPMarkerLength);
-    if (APPMarkerTag === "ffe1") {
-        let entryNumber = data.readUInt8(20);
-        if (entryNumber > 0) {
-            let direction = data.toString("ascii", 12, 14) !== "II";
-            let exif = ifds(data, 20, tags.ifd, direction, entryNumber);
-            if (exif && exif.ExifOffset) {
-                exif.SubExif = ifds(data, parseInt(exif.ExifOffset, 10) + 12, tags.ifd, direction);
-            }
-            if (exif && exif.GPSInfo) {
-                exif.GPSInfo = ifds(data, parseInt(exif.GPSInfo, 10) + 12, tags.gps, direction);
-            }
-            return exif;
-        } else {
-            return {};
-        }
-    } else if (maker === "ffe0") {
-        /*JFIF format*/
-        /*
-         ffd8 ffe0 xxxx 4a46494600 xxxx xx xxxx xxxx xx xx
-         SOI APP0 len   id    JFIF ver  u  x    y    x  y
-         */
-
-
-        let APP0Length = data.readUInt16BE(SOILength + APP0TagLength);
-
-        let APP0Tag = data.toString("hex", SOILength + APPTagLength + APP0Length, SOILength + APPTagLength + APP0Length + APP1TagLength);
-        if (maker === "ffe1") {
-            let entryNumber = data.readUInt8(38);
+    if (SOIMarker === JPEGSOIMarker) {
+        if (APPMarkerTag === EXIFMarker) {
+            let entryNumber = data.readUInt8(20);
             if (entryNumber > 0) {
-                let direction = data.toString("ascii", 30, 32) !== "II";
-                let exif = ifds(data, 38, tags.ifd, direction, entryNumber);
+                let direction = data.toString("ascii", 12, 14) !== "II";
+                let exif = ifds(data, 20, tags.ifd, direction, entryNumber);
                 if (exif && exif.ExifOffset) {
                     exif.SubExif = ifds(data, parseInt(exif.ExifOffset, 10) + 12, tags.ifd, direction);
+                }
+                if (exif && exif.GPSInfo) {
+                    exif.GPSInfo = ifds(data, parseInt(exif.GPSInfo, 10) + 12, tags.gps, direction);
+                }
+                return exif;
+            } else {
+                return {};
+            }
+        } else if (APPMarkerTag === JFIFMarker) {
+            let APP0Length = data.readUInt16BE(SOIMarkerLength + APPMarkerLength);
+            let APP0End = SOIMarkerLength + APPMarkerLength + APP0Length;
+            let APP1MarkerEnd = SOIMarkerLength + APPMarkerLength + APP0Length + APPMarkerLength;
+            let APP1Marker = data.toString("hex", APP0End, APP1MarkerEnd);
+            if (APP1Marker === EXIFMarker) {
+                const APP1DataSizeLength = 2;
+                const EXIFHeaderLength = 6;
+                const TIFFHeaderLength = 8;
+                //const BEByteOrder = "MM";
+                const LEByteOrder = "II";
+                let IFD1OffsetLength = 4;
+                let APP1HeaderEnd = APP1MarkerEnd + APP1DataSizeLength + EXIFHeaderLength;
+                //let APP1Header = data.toString("ascii", APP1MarkerEnd + APP1DataSizeLength, APP1HeaderEnd);//EXIF
+                const byteOrderLength = 2;
+                let TIFFHeaderEnd = APP1HeaderEnd + TIFFHeaderLength;
+                let byteOrder = data.toString("ascii", APP1HeaderEnd, APP1HeaderEnd + byteOrderLength);
+                let order = byteOrder === LEByteOrder;
+                let IFD0Offset = order ? data.readUInt32LE(TIFFHeaderEnd - IFD1OffsetLength) : data.readUInt32BE(TIFFHeaderEnd - IFD1OffsetLength);
+                let IFD = data.slice(APP1HeaderEnd + IFD0Offset);
+
+                let exif = IFDHandler(IFD, tags.ifd, order);
+                if (exif && exif.ExifOffset) {
+                    exif.SubExif = IFDHandler(data, parseInt(exif.ExifOffset, 10) + 12, tags.ifd, direction);
                 }
                 return exif;
             } else {
@@ -148,7 +179,7 @@ function sync(file) {
             return {};
         }
     } else {
-        throw new Error("Unsupport file type.");
+        throw new Error("Invalid JPEG file.");
     }
 }
 /**
