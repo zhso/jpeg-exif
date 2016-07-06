@@ -3,6 +3,19 @@ const tags = require("./tags.json");
 //unsignedByte,asciiStrings,unsignedShort,unsignedLong,unsignedRational,signedByte,undefined,signedShort,signedLong,signedRational,singleFloat,doubleFloat;
 const bytes = [0, 1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8];
 const fs = require("fs");
+//SOI
+const SOIMarkerLength = 2;
+const JPEGSOIMarker = "ffd8";
+//Marker
+const JFIFMarker = "ffe0";
+const EXIFMarker = "ffe1";
+//Header
+const APP1DataSizeLength = 2;
+const EXIFHeaderLength = 6;
+const TIFFHeaderLength = 8;
+//APP
+const APPMarkerLength = 2;
+
 /**
  * @param data {Buffer}
  * @param cursor {Number}
@@ -15,68 +28,60 @@ const fs = require("fs");
  * console.log(exifFragments.value);
  */
 function IFDHandler(IFD, tags, order) {
-    console.log(IFD);
-    let entryNumber = IFD.readUInt8(0);
-    let entryBegin = 2;
-    let entries = IFD.slice(entryBegin);
+    let entriesNumber = IFD.readUInt8(0);
+    let entriesBegin = 2;
+    let entries = IFD.slice(entriesBegin);
     let exif;
     let entryCount = 0;
     const entryLength = 12;
     try {
-        for (entryCount; entryCount < entryNumber; entryCount++) {
-            let tagBegin = entryCount * entryLength;
-            let entry = entries.slice(tagBegin, tagBegin + entryLength);
-            console.log(`${entry.toString("hex", 0, 2)} ${entry.toString("hex", 2, 4)} ${entry.toString("hex", 4, 8)} ${entry.toString("hex", 8, 12)}`.toUpperCase());
+        for (entryCount; entryCount < entriesNumber; entryCount++) {
+            let entryBegin = entryCount * entryLength;
+            let entry = entries.slice(entryBegin, entryBegin + entryLength);
+            const tagBegin = 0;
             const tagLength = 2;
+            const dataFormatBegin = tagBegin + tagLength;
             const dataFormatLength = 2;
+            const componentsBegin = dataFormatBegin + dataFormatLength;
             const componentsNumberLength = 4;
+            const dataValueBegin = componentsBegin + componentsNumberLength;
             const dataValueLength = 4;
-
-            let formatBegin = tagBegin + tagLength;
-            let tagAddress = entry.slice(tagBegin, formatBegin);
+            let tagAddress = entry.slice(tagBegin, dataFormatBegin);
             let tagNumber = order ? tagAddress.reverse().toString("hex") : tagAddress.toString("hex");
             let tagName = tags[tagNumber];
-
-            let dataFormat = order ? entry.readUInt16LE(formatBegin) : entry.readUInt16BE(formatBegin);
-            let componentsBegin = formatBegin + dataFormatLength;
+            let dataFormat = order ? entry.readUInt16LE(dataFormatBegin) : entry.readUInt16BE(dataFormatBegin);
             let componentsByte = bytes[dataFormat];
             let componentsNumber = order ? entry.readUInt32LE(componentsBegin) : entry.readUInt32BE(componentsBegin);
-
             let dataLength = componentsNumber * componentsByte;
-            let dataBegin = componentsBegin + componentsNumberLength;
-            let dataValue = entry.slice(dataBegin, dataBegin + dataValueLength);
+            let dataValue = entry.slice(dataValueBegin, dataValueBegin + dataValueLength);
             if (dataLength > 4) {
                 let dataOffset = order ? dataValue.readUInt32LE() : dataValue.readUInt32BE();
-                dataValue = IFD.slice(dataOffset - entryBegin, dataOffset + dataLength - entryBegin);
-                console.log(dataValue);
-            } else {
-                console.log("-------------------------------------------------------------");
+                //console.log(`${dataValue.toString("hex").toUpperCase()} ${dataOffset}`);
+                dataValue = IFD.slice(dataOffset - TIFFHeaderLength, dataOffset + dataLength - TIFFHeaderLength);//here
             }
-            console.log(`${tagName} : ${dataValue.toString("ascii")}`);
             let tagValue;
             if (tagName) {
-                console.log(dataFormat);
                 switch (dataFormat) {
-                    case 0:
+                    case 1:
                         tagValue = dataValue.readUInt8();
                         break;
-                    case 1:
+                    case 2:
                         tagValue = dataValue.toString("ascii").replace(/\u0000/g, "").trim();
                         break;
-                    case 2:
+                    case 3:
                         tagValue = order ? dataValue.readUInt16LE() : dataValue.readUInt16BE();
                         break;
-                    case 3:
-                        tagValue = order ? dataValue.readUInt32BE() : dataValue.readUInt32LE();
-                        break;
                     case 4:
+                        tagValue = order ? dataValue.readUInt32LE() : dataValue.readUInt32BE();
+                        break;
+                    case 5:
                         tagValue = [];
                         for (let i = 0; i < dataValue.length; i += 8) {
-                            value.push(order ? dataValue.readUInt32BE(i) / dataValue.readUInt32BE(i + 4) : dataValue.readUInt32LE(i) / dataValue.readUInt32LE(i + 4));
+                            tagValue.push(order ? dataValue.readUInt32LE(i) / dataValue.readUInt32LE(i + 4) : dataValue.readUInt32BE(i) / dataValue.readUInt32BE(i + 4));
                         }
                         break;
-                    case 6:
-                        switch (tag) {
+                    case 7:
+                        switch (tagName) {
                             case "ExifVersion":
                                 tagValue = dataValue.toString();
                                 break;
@@ -91,8 +96,8 @@ function IFDHandler(IFD, tags, order) {
                                 break;
                         }
                         break;
-                    case 9:
-                        tagValue = order ? dataValue.readInt32BE(0) / dataValue.readInt32BE(4) : dataValue.readInt32LE(0) / dataValue.readInt32LE(4);
+                    case 10:
+                        tagValue = order ? dataValue.readInt32LE(0) / dataValue.readInt32LE(4) : dataValue.readInt32BE(0) / dataValue.readInt32BE(4);
                         break;
                     default:
                         tagValue = "0x" + dataValue.toString("hex");
@@ -102,6 +107,11 @@ function IFDHandler(IFD, tags, order) {
                     exif = {};
                 }
                 exif[tagName] = tagValue;
+                if(dataLength>4) {
+                    //console.log(`${entry.toString("hex", 0, 2).toUpperCase()} ${entry.toString("hex", 2, 4).toUpperCase()} ${entry.toString("hex", 4, 8).toUpperCase()} ${entry.toString("hex", 8, 12).toUpperCase()}`);
+                    console.log(`${tagName} : ${tagValue} > ${dataValue.toString("hex").toUpperCase()}`);
+                }
+
             } else {
                 throw new Error("unkown tag name");
             }
@@ -123,11 +133,6 @@ function sync(file) {
         throw new Error("Please give me the file.");
     }
     let data = fs.readFileSync(file);
-    const SOIMarkerLength = 2;
-    const JPEGSOIMarker = "ffd8";
-    const JFIFMarker = "ffe0";
-    const EXIFMarker = "ffe1";
-    const APPMarkerLength = 2;
     let SOIMarker = data.toString("hex", 0, SOIMarkerLength);
     let APPMarkerTag = data.toString("hex", SOIMarkerLength, SOIMarkerLength + APPMarkerLength);
     if (SOIMarker === JPEGSOIMarker) {
@@ -152,9 +157,6 @@ function sync(file) {
             let APP1MarkerEnd = SOIMarkerLength + APPMarkerLength + APP0Length + APPMarkerLength;
             let APP1Marker = data.toString("hex", APP0End, APP1MarkerEnd);
             if (APP1Marker === EXIFMarker) {
-                const APP1DataSizeLength = 2;
-                const EXIFHeaderLength = 6;
-                const TIFFHeaderLength = 8;
                 //const BEByteOrder = "MM";
                 const LEByteOrder = "II";
                 let IFD1OffsetLength = 4;
@@ -166,12 +168,14 @@ function sync(file) {
                 let order = byteOrder === LEByteOrder;
                 let IFD0Offset = order ? data.readUInt32LE(TIFFHeaderEnd - IFD1OffsetLength) : data.readUInt32BE(TIFFHeaderEnd - IFD1OffsetLength);
                 let IFD = data.slice(APP1HeaderEnd + IFD0Offset);
-
+                console.log(IFD.toString("hex", 0, 80).toUpperCase());
                 let exif = IFDHandler(IFD, tags.ifd, order);
                 if (exif && exif.ExifOffset) {
-                    exif.SubExif = IFDHandler(data, parseInt(exif.ExifOffset, 10) + 12, tags.ifd, direction);
+                    IFD = data.slice(parseInt(exif.ExifOffset, 10)+30);
+                    console.log(IFD.toString("hex", 0, 80).toUpperCase());
+                    exif.SubExif = IFDHandler(IFD, tags.ifd, order);
                 }
-                return exif;
+                //return exif;
             } else {
                 return {};
             }
