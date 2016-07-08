@@ -17,24 +17,29 @@ const TIFFHeaderLength = 8;
 const APPMarkerLength = 2;
 
 /**
- * @param data {Buffer}
- * @param cursor {Number}
+ * @param IFD {Buffer}
  * @param tags {Object}
- * @param direction {Boolean}
+ * @param order {Boolean}
+ * @param offset {Number}
  * @returns {Object}
  * @example
  * var content = fs.readFileSync("~/Picture/IMG_0911.JPG");
  * var exifFragments = ifds(content, 0, [{ "key": "value" }], true);
  * console.log(exifFragments.value);
  */
-function IFDHandler(IFD, tags, order) {
-    let entriesNumber = IFD.readUInt8(0);
+function IFDHandler(IFD, tags, order, offset) {
+    let entriesNumber = order ? IFD.readUInt16LE(0) : IFD.readUInt16BE(0);
     let entriesBegin = 2;
     let entries = IFD.slice(entriesBegin);
-    let exif;
     let entryCount = 0;
     const entryLength = 12;
+    /*
+     const nextOffsetLength = 4;
+     let nextOffsetBegin = entriesBegin + entriesNumber * entryLength;
+     let nextOffset=order ? IFD.readUInt16LE(nextOffsetBegin, nextOffsetBegin + nextOffsetLength) : IFD.readUInt16BE(nextOffsetBegin, nextOffsetBegin + nextOffsetLength));
+     */
     try {
+        let exif;
         for (entryCount; entryCount < entriesNumber; entryCount++) {
             let entryBegin = entryCount * entryLength;
             let entry = entries.slice(entryBegin, entryBegin + entryLength);
@@ -55,24 +60,23 @@ function IFDHandler(IFD, tags, order) {
             let dataLength = componentsNumber * componentsByte;
             let dataValue = entry.slice(dataValueBegin, dataValueBegin + dataValueLength);
             if (dataLength > 4) {
-                let dataOffset = order ? dataValue.readUInt32LE() : dataValue.readUInt32BE();
-                //console.log(`${dataValue.toString("hex").toUpperCase()} ${dataOffset}`);
-                dataValue = IFD.slice(dataOffset - TIFFHeaderLength, dataOffset + dataLength - TIFFHeaderLength);//here
+                let dataOffset = order ? dataValue.readUInt32LE(0) : dataValue.readUInt32BE(0);
+                dataValue = IFD.slice(dataOffset - offset, dataOffset + dataLength - offset);
             }
             let tagValue;
             if (tagName) {
                 switch (dataFormat) {
                     case 1:
-                        tagValue = dataValue.readUInt8();
+                        tagValue = dataValue.readUInt8(0);
                         break;
                     case 2:
                         tagValue = dataValue.toString("ascii").replace(/\u0000/g, "").trim();
                         break;
                     case 3:
-                        tagValue = order ? dataValue.readUInt16LE() : dataValue.readUInt16BE();
+                        tagValue = order ? dataValue.readUInt16LE(0) : dataValue.readUInt16BE(0);
                         break;
                     case 4:
-                        tagValue = order ? dataValue.readUInt32LE() : dataValue.readUInt32BE();
+                        tagValue = order ? dataValue.readUInt32LE(0) : dataValue.readUInt32BE(0);
                         break;
                     case 5:
                         tagValue = [];
@@ -107,19 +111,14 @@ function IFDHandler(IFD, tags, order) {
                     exif = {};
                 }
                 exif[tagName] = tagValue;
-                if(dataLength>4) {
-                    //console.log(`${entry.toString("hex", 0, 2).toUpperCase()} ${entry.toString("hex", 2, 4).toUpperCase()} ${entry.toString("hex", 4, 8).toUpperCase()} ${entry.toString("hex", 8, 12).toUpperCase()}`);
-                    console.log(`${tagName} : ${tagValue} > ${dataValue.toString("hex").toUpperCase()}`);
-                }
-
             } else {
-                throw new Error("unkown tag name");
+                throw new Error("Unkown tag.");
             }
         }
+        return exif;
     } catch (err) {
         throw new Error(err);
     }
-    return exif;
 }
 /**
  * @param file {String}
@@ -137,29 +136,33 @@ function sync(file) {
     let APPMarkerTag = data.toString("hex", SOIMarkerLength, SOIMarkerLength + APPMarkerLength);
     if (SOIMarker === JPEGSOIMarker) {
         if (APPMarkerTag === EXIFMarker) {
-            let entryNumber = data.readUInt8(20);
-            if (entryNumber > 0) {
-                let direction = data.toString("ascii", 12, 14) !== "II";
-                let exif = ifds(data, 20, tags.ifd, direction, entryNumber);
-                if (exif && exif.ExifOffset) {
-                    exif.SubExif = ifds(data, parseInt(exif.ExifOffset, 10) + 12, tags.ifd, direction);
-                }
-                if (exif && exif.GPSInfo) {
-                    exif.GPSInfo = ifds(data, parseInt(exif.GPSInfo, 10) + 12, tags.gps, direction);
-                }
-                return exif;
-            } else {
-                return {};
+            //const BEByteOrder = "MM";
+            const LEByteOrder = "II";
+            const IFD1OffsetLength = 4;
+            let APP1HeaderEnd = SOIMarkerLength + APPMarkerLength + APP1DataSizeLength + EXIFHeaderLength;
+            //let APP1Header = data.toString("ascii", APP1MarkerEnd + APP1DataSizeLength, APP1HeaderEnd);//EXIF
+            const byteOrderLength = 2;
+            let TIFFHeaderEnd = APP1HeaderEnd + TIFFHeaderLength;
+            let byteOrder = data.toString("ascii", APP1HeaderEnd, APP1HeaderEnd + byteOrderLength);
+            let order = byteOrder === LEByteOrder;
+            let IFD0Offset = order ? data.readUInt32LE(TIFFHeaderEnd - IFD1OffsetLength) : data.readUInt32BE(TIFFHeaderEnd - IFD1OffsetLength);
+            let IFD = data.slice(APP1HeaderEnd + IFD0Offset);
+            let exif = IFDHandler(IFD, tags.ifd, order, IFD0Offset);
+            if (exif && exif.ExifOffset) {
+                IFD = data.slice(parseInt(exif.ExifOffset, 10) + 30);
+                exif.SubExif = IFDHandler(IFD, tags.ifd, order, exif.ExifOffset);
             }
+            return exif;
         } else if (APPMarkerTag === JFIFMarker) {
             let APP0Length = data.readUInt16BE(SOIMarkerLength + APPMarkerLength);
+            console.log(APP0Length);
             let APP0End = SOIMarkerLength + APPMarkerLength + APP0Length;
-            let APP1MarkerEnd = SOIMarkerLength + APPMarkerLength + APP0Length + APPMarkerLength;
+            let APP1MarkerEnd = APP0End + APPMarkerLength;
             let APP1Marker = data.toString("hex", APP0End, APP1MarkerEnd);
             if (APP1Marker === EXIFMarker) {
                 //const BEByteOrder = "MM";
                 const LEByteOrder = "II";
-                let IFD1OffsetLength = 4;
+                const IFD1OffsetLength = 4;
                 let APP1HeaderEnd = APP1MarkerEnd + APP1DataSizeLength + EXIFHeaderLength;
                 //let APP1Header = data.toString("ascii", APP1MarkerEnd + APP1DataSizeLength, APP1HeaderEnd);//EXIF
                 const byteOrderLength = 2;
@@ -168,19 +171,17 @@ function sync(file) {
                 let order = byteOrder === LEByteOrder;
                 let IFD0Offset = order ? data.readUInt32LE(TIFFHeaderEnd - IFD1OffsetLength) : data.readUInt32BE(TIFFHeaderEnd - IFD1OffsetLength);
                 let IFD = data.slice(APP1HeaderEnd + IFD0Offset);
-                console.log(IFD.toString("hex", 0, 80).toUpperCase());
-                let exif = IFDHandler(IFD, tags.ifd, order);
+                let exif = IFDHandler(IFD, tags.ifd, order, IFD0Offset);
                 if (exif && exif.ExifOffset) {
-                    IFD = data.slice(parseInt(exif.ExifOffset, 10)+30);
-                    console.log(IFD.toString("hex", 0, 80).toUpperCase());
-                    exif.SubExif = IFDHandler(IFD, tags.ifd, order);
+                    IFD = data.slice(parseInt(exif.ExifOffset, 10) + 30);
+                    exif.SubExif = IFDHandler(IFD, tags.ifd, order, exif.ExifOffset);
                 }
-                //return exif;
+                return exif;
             } else {
                 return {};
             }
         } else {
-            return {};
+            throw new Error("Unsupport APP Marker.");
         }
     } else {
         throw new Error("Invalid JPEG file.");
@@ -208,32 +209,48 @@ function async(file, callback) {
             if (err) {
                 reject(err);
             } else {
-                let maker = data.toString("hex", 2, 4);
-                if (maker === "ffe1") {
-                    let entryNumber = data.readUInt8(20);
-                    if (entryNumber > 0) {
-                        let direction = data.toString("ascii", 12, 14) !== "II";
-                        let exif = ifds(data, 20, tags.ifd, direction, entryNumber);
-                        if (exif && exif.ExifOffset) {
-                            exif.SubExif = ifds(data, parseInt(exif.ExifOffset, 10) + 12, tags.ifd, direction);
-                        }
-                        if (exif && exif.GPSInfo) {
-                            exif.GPSInfo = ifds(data, parseInt(exif.GPSInfo, 10) + 12, tags.gps, direction);
-                        }
-                        resolve(exif);
-                    } else {
-                        resolve({});
-                    }
-                } else if (maker === "ffe0") {
-
-                    maker = data.toString("hex", 20, 22);
-                    if (maker === "ffe1") {
-                        let entryNumber = data.readUInt8(38);
+                let SOIMarker = data.toString("hex", 0, SOIMarkerLength);
+                let APPMarkerTag = data.toString("hex", SOIMarkerLength, SOIMarkerLength + APPMarkerLength);
+                if (SOIMarker === JPEGSOIMarker) {
+                    if (APPMarkerTag === EXIFMarker) {
+                        let entryNumber = data.readUInt8(20);
                         if (entryNumber > 0) {
-                            let direction = data.toString("ascii", 30, 32) !== "II";
-                            let exif = ifds(data, 38, tags.ifd, direction, entryNumber);
+                            let direction = data.toString("ascii", 12, 14) !== "II";
+                            let exif = ifds(data, 20, tags.ifd, direction, entryNumber);
                             if (exif && exif.ExifOffset) {
                                 exif.SubExif = ifds(data, parseInt(exif.ExifOffset, 10) + 12, tags.ifd, direction);
+                            }
+                            if (exif && exif.GPSInfo) {
+                                exif.GPSInfo = ifds(data, parseInt(exif.GPSInfo, 10) + 12, tags.gps, direction);
+                            }
+                            resolve(exif);
+                        } else {
+                            resolve({});
+                        }
+                    } else if (APPMarkerTag === JFIFMarker) {
+                        let APP0Length = data.readUInt16BE(SOIMarkerLength + APPMarkerLength);
+                        let APP0End = SOIMarkerLength + APPMarkerLength + APP0Length;
+                        let APP1MarkerEnd = SOIMarkerLength + APPMarkerLength + APP0Length + APPMarkerLength;
+                        let APP1Marker = data.toString("hex", APP0End, APP1MarkerEnd);
+                        if (APP1Marker === EXIFMarker) {
+                            //const BEByteOrder = "MM";
+                            const LEByteOrder = "II";
+                            let IFD1OffsetLength = 4;
+                            let APP1HeaderEnd = APP1MarkerEnd + APP1DataSizeLength + EXIFHeaderLength;
+                            //let APP1Header = data.toString("ascii", APP1MarkerEnd + APP1DataSizeLength, APP1HeaderEnd);//EXIF
+                            const byteOrderLength = 2;
+                            let TIFFHeaderEnd = APP1HeaderEnd + TIFFHeaderLength;
+                            let byteOrder = data.toString("ascii", APP1HeaderEnd, APP1HeaderEnd + byteOrderLength);
+                            let order = byteOrder === LEByteOrder;
+                            let IFD0Offset = order ? data.readUInt32LE(TIFFHeaderEnd - IFD1OffsetLength) : data.readUInt32BE(TIFFHeaderEnd - IFD1OffsetLength);
+                            let IFD = data.slice(APP1HeaderEnd + IFD0Offset);
+                            let exif = IFDHandler(IFD, tags.ifd, order, IFD0Offset);
+                            if (exif && exif.ExifOffset) {
+                                IFD = data.slice(parseInt(exif.ExifOffset, 10) + 30);
+                                exif.SubExif = IFDHandler(IFD, tags.ifd, order, exif.ExifOffset);
+                            }
+                            if (exif && exif.GPSInfo) {
+                                exif.GPSInfo = ifds(data, parseInt(exif.GPSInfo, 10) + 12, tags.gps, direction);
                             }
                             resolve(exif);
                         } else {
