@@ -1,4 +1,5 @@
 "use strict";
+let BT = new Date();
 const tags = require("./tags.json");
 //unsignedByte,asciiStrings,unsignedShort,unsignedLong,unsignedRational,signedByte,undefined,signedShort,signedLong,signedRational,singleFloat,doubleFloat;
 const bytes = [0, 1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8];
@@ -13,8 +14,6 @@ const JPEGSOIMarker = 0xffd8;
 const APPMarkerLength = 2;
 const APPMarkerBegin = 0xffe0;
 const APPMarkerEnd = 0xffef;
-const JFIFMarker = 0xffe0;
-const EXIFMarker = 0xffe1;
 let data;
 function isValid(buffer) {
     let SOIMarker = buffer.readUInt16BE();
@@ -22,33 +21,54 @@ function isValid(buffer) {
 }
 function checkAPPn(buffer) {
     let APPMarkerTag = buffer.readUInt16BE();
-    return APPMarkerTag > APPMarkerBegin && APPMarkerTag < APPMarkerEnd ? APPMarkerTag : false;
-}
-function JFIFHandler(buffer) {
-
+    return APPMarkerTag >= APPMarkerBegin && APPMarkerTag <= APPMarkerEnd ? APPMarkerTag - APPMarkerBegin : false;
 }
 function EXIFHandler(buffer) {
-    let length=buffer.readUInt16BE(APPMarkerLength);
-    console.log(length);
-    const lengthLength=2;
-    const identifierLength=5;
-    let identifier=buffer.toString("ascii",APPMarkerLength+lengthLength,APPMarkerLength+lengthLength+5);
-    console.log(identifier);
-    console.log(buffer.toString("hex",APPMarkerLength,20));
-    console.log(marker.length);
-    console.log(buffer);
+    //<APP1 Length>
+    let length = buffer.readUInt16BE();
+    buffer = buffer.slice(0, length);
+    const lengthLength = 2;
+    buffer = buffer.slice(lengthLength);
+    //</APP1 Length>
+    //<identifier>
+    const identifierLength = 5;
+    let identifier = buffer.toString("ascii", 0, identifierLength);
+    buffer = buffer.slice(identifierLength);
+    //</identifier>
+    //<Pad>
+    const padLength = 1;
+    buffer = buffer.slice(padLength);
+    //</Pad>
+    //<TIFF Headers>
+    //<Byte Order>
+    const byteOrderLength = 2;
+    let byteOrder = buffer.toString("ascii", 0, byteOrderLength) === "MM";
+    //</Byte Order>
+    //<42>
+    const fortyTwoLength = 2;
+    let fortyTwoEnd = byteOrderLength + fortyTwoLength;
+    //</42>
+    //<Offset of IFD>
+    let offsetOfIFD = byteOrder ? buffer.readUInt16BE(fortyTwoEnd) : buffer.readUInt16LE(fortyTwoEnd);
+    //</Offset of IFD>
+    //</TIFF Headers>
+    buffer = buffer.slice(TIFFHeaderLength + offsetOfIFD);
+    IFDHandler(buffer, tags.ifd, byteOrder);
 }
-function APPHandler(buffer, markerTag) {
-    switch (markerTag) {
-        case JFIFMarker:
-            JFIFHandler(buffer);
-            break;
-        case EXIFMarker:
-            EXIFHandler(buffer);
-            break;
-        default:
-            throw new Error("Unsupport APPn Marker.");
-            break;
+function APPnHandler(buffer) {
+    let APPMarkerTag = checkAPPn(buffer);
+    if (APPMarkerTag !== false) {//APP0 is 0, and 0==false
+        buffer = buffer.slice(APPMarkerLength);
+        let length = buffer.readUInt16BE();
+        switch (APPMarkerTag) {
+            case 1: //EXIF
+                EXIFHandler(buffer);
+                break;
+            default:
+                buffer = buffer.slice(length);
+                APPnHandler(buffer);
+                break;
+        }
     }
 }
 /**
@@ -62,12 +82,13 @@ function APPHandler(buffer, markerTag) {
  * var exifFragments = ifds(content, 0, [{ "key": "value" }], true);
  * console.log(exifFragments.value);
  */
-function IFDHandler(IFD, tags, order, offset) {
-    let entriesNumber = order ? IFD.readUInt16LE(0) : IFD.readUInt16BE(0);
-    console.log(entriesNumber);
-    let entriesBegin = 2;
-    let entries = IFD.slice(entriesBegin);
-    let entryCount = 0;
+function IFDHandler(buffer, tags, order) {
+    let entriesNumber = order ? buffer.readUInt16BE() : buffer.readUInt16LE();
+    if (entriesNumber === 0) {
+        return;
+    }
+    let entriesNumberLength = 2;
+    let entries = buffer.slice(entriesNumberLength);
     const entryLength = 12;
     /*
      const nextOffsetLength = 4;
@@ -76,6 +97,7 @@ function IFDHandler(IFD, tags, order, offset) {
      */
     try {
         let exif;
+        let entryCount = 0;
         for (entryCount; entryCount < entriesNumber; entryCount++) {
             let entryBegin = entryCount * entryLength;
             let entry = entries.slice(entryBegin, entryBegin + entryLength);
@@ -88,36 +110,38 @@ function IFDHandler(IFD, tags, order, offset) {
             const dataValueBegin = componentsBegin + componentsNumberLength;
             const dataValueLength = 4;
             let tagAddress = entry.slice(tagBegin, dataFormatBegin);
-            let tagNumber = order ? tagAddress.reverse().toString("hex") : tagAddress.toString("hex");
+            let tagNumber = order ? tagAddress.toString("hex") : tagAddress.reverse().toString("hex");
             let tagName = tags[tagNumber];
-            let dataFormat = order ? entry.readUInt16LE(dataFormatBegin) : entry.readUInt16BE(dataFormatBegin);
+            let dataFormat = order ? entry.readUInt16BE(dataFormatBegin) : entry.readUInt16LE(dataFormatBegin);
             let componentsByte = bytes[dataFormat];
-            let componentsNumber = order ? entry.readUInt32LE(componentsBegin) : entry.readUInt32BE(componentsBegin);
+            let componentsNumber = order ? entry.readUInt32BE(componentsBegin) : entry.readUInt32LE(componentsBegin);
             let dataLength = componentsNumber * componentsByte;
             let dataValue = entry.slice(dataValueBegin, dataValueBegin + dataValueLength);
             if (dataLength > 4) {
-                let dataOffset = order ? dataValue.readUInt32LE(0) : dataValue.readUInt32BE(0);
-                dataValue = IFD.slice(dataOffset - offset, dataOffset + dataLength - offset);
+                let dataOffset = order ? dataValue.readUInt32BE() : dataValue.readUInt32LE();
+                dataValue = buffer.slice(dataOffset, dataOffset + dataLength);
             }
             let tagValue;
             if (tagName) {
+                console.log(dataFormat);
                 switch (dataFormat) {
                     case 1:
-                        tagValue = dataValue.readUInt8(0);
+                        tagValue = dataValue.readUInt8();
                         break;
                     case 2:
                         tagValue = dataValue.toString("ascii").replace(/\u0000/g, "").trim();
                         break;
                     case 3:
-                        tagValue = order ? dataValue.readUInt16LE(0) : dataValue.readUInt16BE(0);
+                        tagValue = order ? dataValue.readUInt16BE() : dataValue.readUInt16LE();
                         break;
                     case 4:
-                        tagValue = order ? dataValue.readUInt32LE(0) : dataValue.readUInt32BE(0);
+                        tagValue = order ? dataValue.readUInt32BE() : dataValue.readUInt32LE();
                         break;
                     case 5:
+                        console.log(`${dataLength}|${dataValue.toString("hex")}`);
                         tagValue = [];
                         for (let i = 0; i < dataValue.length; i += 8) {
-                            tagValue.push(order ? dataValue.readUInt32LE(i) / dataValue.readUInt32LE(i + 4) : dataValue.readUInt32BE(i) / dataValue.readUInt32BE(i + 4));
+                            tagValue.push(order ? dataValue.readUInt32BE(i) / dataValue.readUInt32BE(i + 4) : dataValue.readUInt32LE(i) / dataValue.readUInt32LE(i + 4));
                         }
                         break;
                     case 7:
@@ -137,21 +161,18 @@ function IFDHandler(IFD, tags, order, offset) {
                         }
                         break;
                     case 10:
-                        tagValue = order ? dataValue.readInt32LE(0) / dataValue.readInt32LE(4) : dataValue.readInt32BE(0) / dataValue.readInt32BE(4);
+                        tagValue = order ? dataValue.readInt32BE() / dataValue.readInt32BE(4) : dataValue.readInt32LE() / dataValue.readInt32LE(4);
                         break;
                     default:
                         tagValue = "0x" + dataValue.toString("hex");
                         break;
                 }
-                if (!exif) {
-                    exif = {};
-                }
-                exif[tagName] = tagValue;
+                data[tagName] = tagValue;
             } else {
-                throw new Error("Unkown tag.");
+                //throw new Error(`Unkown Tag [0x${tagNumber}].`);
             }
         }
-        return exif;
+        return data;
     } catch (err) {
         throw new Error(err);
     }
@@ -171,13 +192,12 @@ function sync(file) {
     if (isValid(buffer)) {
         buffer = buffer.slice(SOIMarkerLength);
         data = {};
-        let APPMarkerTag = checkAPPn(buffer);
-        if (APPMarkerTag) {
-            APPHandler(buffer, APPMarkerTag);
-        }
+        APPnHandler(buffer);
     } else {
         throw new Error("Invalid JPEG file.");
     }
+    let ET = new Date();
+    console.log(`${ET - BT}ms`);
     return data;
     //const BEByteOrder = "MM";
     const LEByteOrder = "II";
