@@ -1,5 +1,6 @@
 "use strict";
 let BT = new Date();
+let debug = true;
 const tags = require("./tags.json");
 //unsignedByte,asciiStrings,unsignedShort,unsignedLong,unsignedRational,signedByte,undefined,signedShort,signedLong,signedRational,singleFloat,doubleFloat;
 const bytes = [0, 1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8];
@@ -15,8 +16,26 @@ const APPMarkerLength = 2;
 const APPMarkerBegin = 0xffe0;
 const APPMarkerEnd = 0xffef;
 let data;
+function fixPad(value, length) {
+    let diff = length - value.toString().length;
+    let padding = " ";
+    let i = 0;
+    let str = "";
+    for (i; i < diff; i++) {
+        str += padding;
+    }
+    return value + str;
+}
 function isValid(buffer) {
     let SOIMarker = buffer.readUInt16BE();
+    debug && console.log(`
+┌───────────────────────┬─────────────┬─────────────┐
+│ Name                  │ Size(Bytes) │ Value       │
+├───────────────────────┴─────────────┴─────────────┤
+│ SOI Header                                        │
+│┌──────────────────────┬─────────────┬────────────┐│
+││ Start Of Image       │ 2           │ 0x${buffer.toString("hex", 0, SOIMarkerLength).toUpperCase()}     ││
+│└──────────────────────┴─────────────┴────────────┘│`);
     return SOIMarker === JPEGSOIMarker ? true : false;
 }
 function checkAPPn(buffer) {
@@ -24,51 +43,82 @@ function checkAPPn(buffer) {
     return APPMarkerTag >= APPMarkerBegin && APPMarkerTag <= APPMarkerEnd ? APPMarkerTag - APPMarkerBegin : false;
 }
 function EXIFHandler(buffer) {
-    //<APP1 Length>
+    let APP1Marker = buffer.toString("hex", 0, APPMarkerLength);
+    let originBuffer = buffer;
+    buffer = buffer.slice(APPMarkerLength);
     let length = buffer.readUInt16BE();
     buffer = buffer.slice(0, length);
     const lengthLength = 2;
     buffer = buffer.slice(lengthLength);
-    //</APP1 Length>
-    //<identifier>
     const identifierLength = 5;
     let identifier = buffer.toString("ascii", 0, identifierLength);
     buffer = buffer.slice(identifierLength);
-    //</identifier>
     //<Pad>
     const padLength = 1;
+    let pad = buffer.toString("hex", 0, padLength);
     buffer = buffer.slice(padLength);
     //</Pad>
     //<TIFF Headers>
-    //<Byte Order>
     const byteOrderLength = 2;
     let byteOrder = buffer.toString("ascii", 0, byteOrderLength) === "MM";
-    //</Byte Order>
     //<42>
     const fortyTwoLength = 2;
     let fortyTwoEnd = byteOrderLength + fortyTwoLength;
     //</42>
-    //<Offset of IFD>
     let offsetOfIFD = byteOrder ? buffer.readUInt16BE(fortyTwoEnd) : buffer.readUInt16LE(fortyTwoEnd);
-    //</Offset of IFD>
+    debug && console.log(`├───────────────────────────────────────────────────┤
+│ APP1 Marker                                       │
+│┌──────────────────────┬─────────────┬────────────┐│
+││ APP1 Marker          │ 2           │ 0x${fixPad(APP1Marker.toUpperCase(), 8)} ││
+│├──────────────────────┼─────────────┼────────────┤│
+││ Length of field      │ 2           │ ${fixPad(length, 10)} ││
+│├──────────────────────┼─────────────┼────────────┤│
+││ Exif Identifier Code │ 5           │ ${fixPad(identifier.replace("\u0000", ""), 10)} ││
+│├──────────────────────┼─────────────┼────────────┤│
+││ Padding              │ 1           │ 0x${fixPad(pad, 8)} ││
+│├──────────────────────┴─────────────┴────────────┤│
+││ TIFF Header                                     ││
+││┌─────────────────────┬─────────────┬───────────┐││
+│││ Byte Order          │ 2           │ ${fixPad(buffer.toString("ascii", 0, byteOrderLength), 9)} │││
+││├─────────────────────┼─────────────┼───────────┤││
+│││ 42                  │ 2           │ ${fixPad(byteOrder ? buffer.readUInt16BE(byteOrderLength) : buffer.readUInt16LE((byteOrderLength)), 9)} │││
+││├─────────────────────┼─────────────┼───────────┤││
+│││ Offset of IFD       │ 4           │ ${fixPad(offsetOfIFD, 9)} │││
+││└─────────────────────┴─────────────┴───────────┘││
+│└─────────────────────────────────────────────────┘│`);
     //</TIFF Headers>
     buffer = buffer.slice(TIFFHeaderLength + offsetOfIFD);
-    IFDHandler(buffer, tags.ifd, byteOrder);
+    if (buffer.length > 0) {
+        data = IFDHandler(buffer, tags.ifd, byteOrder);
+        if (data.ExifOffset) {
+            buffer = buffer.slice(data.ExifOffset - TIFFHeaderLength);//?????????????????????????????????????????????????
+            data.SubExif = IFDHandler(buffer, tags.ifd, byteOrder);
+        }
+    }
 }
 function APPnHandler(buffer) {
     let APPMarkerTag = checkAPPn(buffer);
     if (APPMarkerTag !== false) {//APP0 is 0, and 0==false
-        buffer = buffer.slice(APPMarkerLength);
-        let length = buffer.readUInt16BE();
+        //buffer = buffer.slice(APPMarkerLength);
+        let length = buffer.readUInt16BE(APPMarkerLength);
         switch (APPMarkerTag) {
             case 1: //EXIF
                 EXIFHandler(buffer);
                 break;
             default:
-                buffer = buffer.slice(length);
-                APPnHandler(buffer);
+                console.log(`├───────────────────────────────────────────────────┤
+│ APP${fixPad(APPMarkerTag, 2)} Header                                      │
+│┌──────────────────────┬─────────────┬────────────┐│
+││ APP${fixPad(APPMarkerTag, 2)} Marker         │ 2           │ 0xFFE${fixPad(APPMarkerTag.toString(16).toUpperCase(), 5)} ││
+│├──────────────────────┼─────────────┼────────────┤│
+││ Length of field      │ 2           │ ${fixPad(length, 10)} ││
+│└──────────────────────┴─────────────┴────────────┘│`);
+                console.log(buffer.slice(APPMarkerLength, APPMarkerLength + length));
+                console.log(buffer.slice(APPMarkerLength, APPMarkerLength + length).toString("ascii"));
                 break;
         }
+        buffer = buffer.slice(APPMarkerLength + length);
+        APPnHandler(buffer);
     }
 }
 /**
@@ -85,18 +135,15 @@ function APPnHandler(buffer) {
 function IFDHandler(buffer, tags, order) {
     let entriesNumber = order ? buffer.readUInt16BE() : buffer.readUInt16LE();
     if (entriesNumber === 0) {
-        return;
+        return {};
     }
     let entriesNumberLength = 2;
     let entries = buffer.slice(entriesNumberLength);
     const entryLength = 12;
-    /*
-     const nextOffsetLength = 4;
-     let nextOffsetBegin = entriesBegin + entriesNumber * entryLength;
-     let nextOffset=order ? IFD.readUInt16LE(nextOffsetBegin, nextOffsetBegin + nextOffsetLength) : IFD.readUInt16BE(nextOffsetBegin, nextOffsetBegin + nextOffsetLength));
-     */
+    //let nextIFDPointerBegin = entriesNumberLength + entryLength * entriesNumber;
+    //let nextIFDPointer = order ? buffer.readUInt32BE(nextIFDPointerBegin) : buffer.readUInt32LE(nextIFDPointerBegin);
     try {
-        let exif;
+        let exif = {};
         let entryCount = 0;
         for (entryCount; entryCount < entriesNumber; entryCount++) {
             let entryBegin = entryCount * entryLength;
@@ -119,11 +166,10 @@ function IFDHandler(buffer, tags, order) {
             let dataValue = entry.slice(dataValueBegin, dataValueBegin + dataValueLength);
             if (dataLength > 4) {
                 let dataOffset = order ? dataValue.readUInt32BE() : dataValue.readUInt32LE();
-                dataValue = buffer.slice(dataOffset, dataOffset + dataLength);
+                dataValue = buffer.slice(dataOffset - TIFFHeaderLength, dataOffset + dataLength - TIFFHeaderLength);
             }
             let tagValue;
             if (tagName) {
-                console.log(dataFormat);
                 switch (dataFormat) {
                     case 1:
                         tagValue = dataValue.readUInt8();
@@ -138,7 +184,6 @@ function IFDHandler(buffer, tags, order) {
                         tagValue = order ? dataValue.readUInt32BE() : dataValue.readUInt32LE();
                         break;
                     case 5:
-                        console.log(`${dataLength}|${dataValue.toString("hex")}`);
                         tagValue = [];
                         for (let i = 0; i < dataValue.length; i += 8) {
                             tagValue.push(order ? dataValue.readUInt32BE(i) / dataValue.readUInt32BE(i + 4) : dataValue.readUInt32LE(i) / dataValue.readUInt32LE(i + 4));
@@ -167,12 +212,12 @@ function IFDHandler(buffer, tags, order) {
                         tagValue = "0x" + dataValue.toString("hex");
                         break;
                 }
-                data[tagName] = tagValue;
+                exif[tagName] = tagValue;
             } else {
-                //throw new Error(`Unkown Tag [0x${tagNumber}].`);
+                throw new Error(`Unkown Tag [0x${tagNumber}].`);
             }
         }
-        return data;
+        return exif;
     } catch (err) {
         throw new Error(err);
     }
@@ -197,7 +242,8 @@ function sync(file) {
         throw new Error("Invalid JPEG file.");
     }
     let ET = new Date();
-    console.log(`${ET - BT}ms`);
+    console.log(`└───────────────────────────────────────────────────┘
+${ET - BT}ms`);
     return data;
     //const BEByteOrder = "MM";
     const LEByteOrder = "II";
