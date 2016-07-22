@@ -1,6 +1,6 @@
 "use strict";
 let BT = new Date();
-let debug = true;
+let debug = false;
 const tags = require("./tags.json");
 //unsignedByte,asciiStrings,unsignedShort,unsignedLong,unsignedRational,signedByte,undefined,signedShort,signedLong,signedRational,singleFloat,doubleFloat;
 const bytes = [0, 1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8];
@@ -28,14 +28,13 @@ function fixPad(value, length) {
 }
 function isValid(buffer) {
     let SOIMarker = buffer.readUInt16BE();
-    debug && console.log(`
-┌───────────────────────┬─────────────┬─────────────┐
-│ Name                  │ Size(Bytes) │ Value       │
-├───────────────────────┴─────────────┴─────────────┤
-│ SOI Header                                        │
-│┌──────────────────────┬─────────────┬────────────┐│
-││ Start Of Image       │ 2           │ 0x${buffer.toString("hex", 0, SOIMarkerLength).toUpperCase()}     ││
-│└──────────────────────┴─────────────┴────────────┘│`);
+    debug && console.log(`┌──────────────────────────┬─────────────┬───────────────────────────────────┐
+│ Name                     │ Size(Bytes) │ Value                             │
+├──────────────────────────┴─────────────┴───────────────────────────────────┤
+│ SOI Header                                                                 │
+│┌─────────────────────────┬─────────────┬──────────────────────────────────┐│
+││ Start Of Image          │ 2           │ 0x${buffer.toString("hex", 0, SOIMarkerLength).toUpperCase()}                           ││
+│└─────────────────────────┴─────────────┴──────────────────────────────────┘│`);
     return SOIMarker === JPEGSOIMarker ? true : false;
 }
 function checkAPPn(buffer) {
@@ -53,47 +52,46 @@ function EXIFHandler(buffer) {
     const identifierLength = 5;
     let identifier = buffer.toString("ascii", 0, identifierLength);
     buffer = buffer.slice(identifierLength);
-    //<Pad>
     const padLength = 1;
     let pad = buffer.toString("hex", 0, padLength);
     buffer = buffer.slice(padLength);
-    //</Pad>
-    //<TIFF Headers>
     const byteOrderLength = 2;
     let byteOrder = buffer.toString("ascii", 0, byteOrderLength) === "MM";
-    //<42>
     const fortyTwoLength = 2;
     let fortyTwoEnd = byteOrderLength + fortyTwoLength;
-    //</42>
     let offsetOfIFD = byteOrder ? buffer.readUInt16BE(fortyTwoEnd) : buffer.readUInt16LE(fortyTwoEnd);
-    debug && console.log(`├───────────────────────────────────────────────────┤
-│ APP1 Marker                                       │
-│┌──────────────────────┬─────────────┬────────────┐│
-││ APP1 Marker          │ 2           │ 0x${fixPad(APP1Marker.toUpperCase(), 8)} ││
-│├──────────────────────┼─────────────┼────────────┤│
-││ Length of field      │ 2           │ ${fixPad(length, 10)} ││
-│├──────────────────────┼─────────────┼────────────┤│
-││ Exif Identifier Code │ 5           │ ${fixPad(identifier.replace("\u0000", ""), 10)} ││
-│├──────────────────────┼─────────────┼────────────┤│
-││ Padding              │ 1           │ 0x${fixPad(pad, 8)} ││
-│├──────────────────────┴─────────────┴────────────┤│
-││ TIFF Header                                     ││
-││┌─────────────────────┬─────────────┬───────────┐││
-│││ Byte Order          │ 2           │ ${fixPad(buffer.toString("ascii", 0, byteOrderLength), 9)} │││
-││├─────────────────────┼─────────────┼───────────┤││
-│││ 42                  │ 2           │ ${fixPad(byteOrder ? buffer.readUInt16BE(byteOrderLength) : buffer.readUInt16LE((byteOrderLength)), 9)} │││
-││├─────────────────────┼─────────────┼───────────┤││
-│││ Offset of IFD       │ 4           │ ${fixPad(offsetOfIFD, 9)} │││
-││└─────────────────────┴─────────────┴───────────┘││
-│└─────────────────────────────────────────────────┘│`);
-    //</TIFF Headers>
+    debug && console.log(`├────────────────────────────────────────────────────────────────────────────┤
+│ APP1 Marker                                                                │
+│┌─────────────────────────┬─────────────┬──────────────────────────────────┐│
+││ APP1 Marker             │ 2           │ 0x${fixPad(APP1Marker.toUpperCase(), 30)} ││
+│├─────────────────────────┼─────────────┼──────────────────────────────────┤│
+││ Length of field         │ 2           │ ${fixPad(length, 32)} ││
+│├─────────────────────────┼─────────────┼──────────────────────────────────┤│
+││ Exif Identifier Code    │ 5           │ ${fixPad(identifier.replace("\u0000", ""), 32)} ││
+│├─────────────────────────┼─────────────┼──────────────────────────────────┤│
+││ Padding                 │ 1           │ 0x${fixPad(pad, 30)} ││
+│├─────────────────────────┴─────────────┴──────────────────────────────────┤│
+││ TIFF Header                                                              ││
+││┌────────────────────────┬─────────────┬─────────────────────────────────┐││
+│││ Byte Order             │ 2           │ ${fixPad(buffer.toString("ascii", 0, byteOrderLength), 31)} │││
+││├────────────────────────┼─────────────┼─────────────────────────────────┤││
+│││ 42                     │ 2           │ ${fixPad(byteOrder ? buffer.readUInt16BE(byteOrderLength) : buffer.readUInt16LE((byteOrderLength)), 31)} │││
+││├────────────────────────┼─────────────┼─────────────────────────────────┤││
+│││ Offset of IFD          │ 4           │ ${fixPad(offsetOfIFD, 31)} │││
+││└────────────────────────┴─────────────┴─────────────────────────────────┘││
+│└──────────────────────────────────────────────────────────────────────────┘│`);
     buffer = buffer.slice(TIFFHeaderLength + offsetOfIFD);
     if (buffer.length > 0) {
+        debug && console.log(`│┌──────────────────────────────────────────────────────────────────────────┐│
+││ IFD0                                                                     ││`);
         data = IFDHandler(buffer, tags.ifd, byteOrder);
         if (data.ExifOffset) {
             buffer = buffer.slice(data.ExifOffset - TIFFHeaderLength);//?????????????????????????????????????????????????
+            debug && console.log(`│├─────────────────────────┴─────────────┴──────────────────────────────────┤│
+││ SubIFD                                                                   ││`);
             data.SubExif = IFDHandler(buffer, tags.ifd, byteOrder);
         }
+        debug && console.log(`│└─────────────────────────┴─────────────┴──────────────────────────────────┘│`);
     }
 }
 function APPnHandler(buffer) {
@@ -106,19 +104,19 @@ function APPnHandler(buffer) {
                 EXIFHandler(buffer);
                 break;
             default:
-                console.log(`├───────────────────────────────────────────────────┤
-│ APP${fixPad(APPMarkerTag, 2)} Header                                      │
-│┌──────────────────────┬─────────────┬────────────┐│
-││ APP${fixPad(APPMarkerTag, 2)} Marker         │ 2           │ 0xFFE${fixPad(APPMarkerTag.toString(16).toUpperCase(), 5)} ││
-│├──────────────────────┼─────────────┼────────────┤│
-││ Length of field      │ 2           │ ${fixPad(length, 10)} ││
-│└──────────────────────┴─────────────┴────────────┘│`);
-                console.log(buffer.slice(APPMarkerLength, APPMarkerLength + length));
-                console.log(buffer.slice(APPMarkerLength, APPMarkerLength + length).toString("ascii"));
+                console.log(`├────────────────────────────────────────────────────────────────────────────┤
+│ APP${fixPad(APPMarkerTag, 2)} Header                                         │
+│┌─────────────────────────┬─────────────┬──────────────────────────────────┐│
+││ APP${fixPad(APPMarkerTag, 2)} Marker            │ 2           │ 0xFFE${fixPad(APPMarkerTag.toString(16).toUpperCase(), 5)} ││
+│├─────────────────────────┼─────────────┼──────────────────────────────────┤│
+││ Length of field         │ 2           │ ${fixPad(length, 10)} ││
+│└─────────────────────────┴─────────────┴──────────────────────────────────┘│`);
+                //console.log(buffer.slice(APPMarkerLength, APPMarkerLength + length));
+                //console.log(buffer.slice(APPMarkerLength, APPMarkerLength + length).toString("ascii"));
+                buffer = buffer.slice(APPMarkerLength + length);
+                APPnHandler(buffer);
                 break;
         }
-        buffer = buffer.slice(APPMarkerLength + length);
-        APPnHandler(buffer);
     }
 }
 /**
@@ -164,7 +162,7 @@ function IFDHandler(buffer, tags, order) {
             let componentsNumber = order ? entry.readUInt32BE(componentsBegin) : entry.readUInt32LE(componentsBegin);
             let dataLength = componentsNumber * componentsByte;
             let dataValue = entry.slice(dataValueBegin, dataValueBegin + dataValueLength);
-            if (dataLength > 4) {
+            if (dataLength > 4) {//?????????????????????????????????????????????????????????????????????????????????????
                 let dataOffset = order ? dataValue.readUInt32BE() : dataValue.readUInt32LE();
                 dataValue = buffer.slice(dataOffset - TIFFHeaderLength, dataOffset + dataLength - TIFFHeaderLength);
             }
@@ -192,10 +190,10 @@ function IFDHandler(buffer, tags, order) {
                     case 7:
                         switch (tagName) {
                             case "ExifVersion":
-                                tagValue = dataValue.toString();
+                                tagValue = dataValue.toString().replace(/\u0000/g, "");
                                 break;
                             case "FlashPixVersion":
-                                tagValue = dataValue.toString();
+                                tagValue = dataValue.toString().replace(/\u0000/g, "");
                                 break;
                             case "SceneType":
                                 tagValue = dataValue.readUInt8(0);
@@ -213,6 +211,11 @@ function IFDHandler(buffer, tags, order) {
                         break;
                 }
                 exif[tagName] = tagValue;
+                if (dataLength > 4) {
+                    console.log(entry);
+                }
+                debug && console.log(entryCount === 0 ? `│├─────────────────────────┬─────────────┬──────────────────────────────────┤│` : `│├─────────────────────────┼─────────────┼──────────────────────────────────┤│`);
+                debug && console.log(`││ ${fixPad(tagName, 23)} │ ${fixPad(dataLength, 11)} │ ${fixPad(tagValue, 32)} ││`);
             } else {
                 throw new Error(`Unkown Tag [0x${tagNumber}].`);
             }
@@ -242,7 +245,7 @@ function sync(file) {
         throw new Error("Invalid JPEG file.");
     }
     let ET = new Date();
-    console.log(`└───────────────────────────────────────────────────┘
+    debug && console.log(`└────────────────────────────────────────────────────────────────────────────┘
 ${ET - BT}ms`);
     return data;
     //const BEByteOrder = "MM";
