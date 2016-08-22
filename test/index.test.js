@@ -54,7 +54,7 @@ describe(".parseSync()", ()=> {
     });
     it("!APP1:#0xffe1", ()=> {
         let data = exif.parseSync("./test/IMG_0003.JPG");
-        expect(data).to.be.an("undefined");
+        expect(data).to.be.an("object");
     });
     it("[SubExif]", ()=> {
         let data = exif.parseSync("./test/IMG_0001.JPG");

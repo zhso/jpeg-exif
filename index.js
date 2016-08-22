@@ -1,6 +1,6 @@
 "use strict";
 let BT = new Date();
-let debug = true;
+let debug = false;
 const tags = require("./tags.json");
 //unsignedByte,asciiStrings,unsignedShort,unsignedLong,unsignedRational,signedByte,undefined,signedShort,signedLong,signedRational,singleFloat,doubleFloat;
 const bytes = [0, 1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8];
