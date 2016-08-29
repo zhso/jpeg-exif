@@ -1,8 +1,8 @@
-"use strict";
-const tags = require("./tags.json");
+'use strict';
+const tags = require('./tags.json');
 //unsignedByte,asciiStrings,unsignedShort,unsignedLong,unsignedRational,signedByte,undefined,signedShort,signedLong,signedRational,singleFloat,doubleFloat;
 const bytes = [0, 1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8];
-const fs = require("fs");
+const fs = require('fs');
 const SOIMarkerLength = 2;
 const JPEGSOIMarker = 0xffd8;
 const APPMarkerLength = 2;
@@ -18,10 +18,10 @@ let data;
  * console.log(isImage);
  */
 function isValid(buffer) {
-    try{
+    try {
         let SOIMarker = buffer.readUInt16BE(0);
         return SOIMarker === JPEGSOIMarker;
-    }catch(e){
+    } catch (e) {
         throw new Error('Unsupport file format.');
     }
 }
@@ -34,8 +34,12 @@ function isValid(buffer) {
  * console.log(APPNumber);
  */
 function checkAPPn(buffer) {
-    let APPMarkerTag = buffer.readUInt16BE(0);
-    return APPMarkerTag >= APPMarkerBegin && APPMarkerTag <= APPMarkerEnd ? APPMarkerTag - APPMarkerBegin : false;
+    try {
+        let APPMarkerTag = buffer.readUInt16BE(0);
+        return APPMarkerTag >= APPMarkerBegin && APPMarkerTag <= APPMarkerEnd ? APPMarkerTag - APPMarkerBegin : false;
+    } catch (e) {
+        throw new Error('Invalid APP Tag.');
+    }
 }
 /**
  * @param buffer {Buffer}
@@ -72,7 +76,7 @@ function IFDHandler(buffer, tags, order, offset) {
         const dataValueBegin = componentsBegin + componentsNumberLength;
         const dataValueLength = 4;
         let tagAddress = entry.slice(tagBegin, dataFormatBegin);
-        let tagNumber = order ? tagAddress.toString("hex") : tagAddress.reverse().toString("hex");
+        let tagNumber = order ? tagAddress.toString('hex') : tagAddress.reverse().toString('hex');
         let tagName = tags[tagNumber];
         let dataFormat = order ? entry.readUInt16BE(dataFormatBegin) : entry.readUInt16LE(dataFormatBegin);
         let componentsByte = bytes[dataFormat];
@@ -90,7 +94,7 @@ function IFDHandler(buffer, tags, order, offset) {
                     tagValue = dataValue.readUInt8(0);
                     break;
                 case 2:
-                    tagValue = dataValue.toString("ascii").replace(/\u0000+$/,'');
+                    tagValue = dataValue.toString('ascii').replace(/\u0000+$/, '');
                     break;
                 case 3:
                     tagValue = order ? dataValue.readUInt16BE(0) : dataValue.readUInt16LE(0);
@@ -106,17 +110,17 @@ function IFDHandler(buffer, tags, order, offset) {
                     break;
                 case 7:
                     switch (tagName) {
-                        case "ExifVersion":
+                        case 'ExifVersion':
                             tagValue = dataValue.toString();
                             break;
-                        case "FlashPixVersion":
+                        case 'FlashPixVersion':
                             tagValue = dataValue.toString();
                             break;
-                        case "SceneType":
+                        case 'SceneType':
                             tagValue = dataValue.readUInt8(0);
                             break;
                         default:
-                            tagValue = "0x" + dataValue.toString("hex", 0, 15);
+                            tagValue = `0x${dataValue.toString('hex', 0, 15)}`;
                             break;
                     }
                     break;
@@ -124,7 +128,7 @@ function IFDHandler(buffer, tags, order, offset) {
                     tagValue = order ? dataValue.readInt32BE(0) / dataValue.readInt32BE(4) : dataValue.readInt32LE(0) / dataValue.readInt32LE(4);
                     break;
                 default:
-                    tagValue = "0x" + dataValue.toString("hex");
+                    tagValue = `0x${dataValue.toString('hex')}`;
                     break;
             }
             exif[tagName] = tagValue;
@@ -134,6 +138,7 @@ function IFDHandler(buffer, tags, order, offset) {
     }
     return exif;
 }
+
 /**
  * @param buffer {Buffer}
  * @returns {Undefined}
@@ -152,23 +157,24 @@ function EXIFHandler(buffer) {
     const padLength = 1;
     buffer = buffer.slice(padLength);
     const byteOrderLength = 2;
-    let byteOrder = buffer.toString("ascii", 0, byteOrderLength) === "MM";
+    let byteOrder = buffer.toString('ascii', 0, byteOrderLength) === 'MM';
     const fortyTwoLength = 2;
     let fortyTwoEnd = byteOrderLength + fortyTwoLength;
     let offsetOfIFD = byteOrder ? buffer.readUInt32BE(fortyTwoEnd) : buffer.readUInt32LE(fortyTwoEnd);
     buffer = buffer.slice(offsetOfIFD);
     if (buffer.length > 0) {
         data = IFDHandler(buffer, tags.ifd, byteOrder, offsetOfIFD);
-        if (data["ExifIFDPointer"]) {
-            buffer = buffer.slice(data["ExifIFDPointer"] - offsetOfIFD);
-            data.SubExif = IFDHandler(buffer, tags.ifd, byteOrder, data["ExifIFDPointer"]);
+        if (data['ExifIFDPointer']) {
+            buffer = buffer.slice(data['ExifIFDPointer'] - offsetOfIFD);
+            data.SubExif = IFDHandler(buffer, tags.ifd, byteOrder, data['ExifIFDPointer']);
         }
         if (data["GPSInfoIFDPointer"]) {
-            buffer = buffer.slice(data["ExifIFDPointer"] ? data["GPSInfoIFDPointer"] - data["ExifIFDPointer"] : data["GPSInfoIFDPointer"] - offsetOfIFD);
-            data.GPSInfo = IFDHandler(buffer, tags.gps, byteOrder, data["GPSInfoIFDPointer"]);
+            buffer = buffer.slice(data['ExifIFDPointer'] ? data['GPSInfoIFDPointer'] - data['ExifIFDPointer'] : data['GPSInfoIFDPointer'] - offsetOfIFD);
+            data.GPSInfo = IFDHandler(buffer, tags.gps, byteOrder, data['GPSInfoIFDPointer']);
         }
     }
 }
+
 /**
  * @param buffer {Buffer}
  * @returns {Undefined}
@@ -191,6 +197,7 @@ function APPnHandler(buffer) {
         }
     }
 }
+
 /**
  * @param file {String}
  * @returns {Object}
@@ -200,9 +207,9 @@ function APPnHandler(buffer) {
  */
 function sync(file) {
     if (!file) {
-        throw new Error("File not found.");
+        throw new Error('File not found');
     }
-    data=undefined;
+    data = undefined;
     let buffer = fs.readFileSync(file);
     if (isValid(buffer)) {
         buffer = buffer.slice(SOIMarkerLength);
@@ -211,6 +218,7 @@ function sync(file) {
     }
     return data;
 }
+
 /**
  * @param file {String}
  * @param callback {Function}
@@ -225,22 +233,26 @@ function sync(file) {
  * }
  */
 function async(file, callback) {
-    if (!file) {
-        throw new Error("File not found.");
-    }
-    data=undefined;
+    data = undefined;
     new Promise((resolve, reject) => {
+        if (!file) {
+            reject('File not found.');
+        }
         fs.readFile(file, (err, buffer) => {
             if (err) {
                 reject(err);
             } else {
-                if (isValid(buffer)) {
-                    buffer = buffer.slice(SOIMarkerLength);
-                    data = {};
-                    APPnHandler(buffer);
-                    resolve(data);
-                } else {
-                    reject("unsupport file type.");
+                try {
+                    if (isValid(buffer)) {
+                        buffer = buffer.slice(SOIMarkerLength);
+                        data = {};
+                        APPnHandler(buffer);
+                        resolve(data);
+                    } else {
+                        reject('unsupport file type.');
+                    }
+                } catch (e) {
+                    reject(e);
                 }
             }
         });
@@ -252,5 +264,6 @@ function async(file, callback) {
         callback(error, undefined);
     });
 }
+
 exports.parse = async;
 exports.parseSync = sync;
