@@ -35,9 +35,8 @@ console.log(data);
 
 ## Features
 
-* Support More Than 450 Exif Tags
-* Support GPSInfo Tags
-* Support Sync Method
+* Support All CP3451 Standard Tags (Include GPS & SubExif Tags)
+* Support Both Sync & Async Method
 
 ## Installation
 

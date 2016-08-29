@@ -22,7 +22,7 @@ function isValid(buffer) {
         let SOIMarker = buffer.readUInt16BE(0);
         return SOIMarker === JPEGSOIMarker;
     }catch(e){
-        return undefined;
+        throw new Error('Unsupport file format.');
     }
 }
 /**
@@ -90,7 +90,7 @@ function IFDHandler(buffer, tags, order, offset) {
                     tagValue = dataValue.readUInt8(0);
                     break;
                 case 2:
-                    tagValue = dataValue.toString("ascii");
+                    tagValue = dataValue.toString("ascii").replace(/\u0000+$/,'');
                     break;
                 case 3:
                     tagValue = order ? dataValue.readUInt16BE(0) : dataValue.readUInt16LE(0);
@@ -160,7 +160,7 @@ function EXIFHandler(buffer) {
     if (buffer.length > 0) {
         data = IFDHandler(buffer, tags.ifd, byteOrder, offsetOfIFD);
         if (data["ExifIFDPointer"]) {
-            buffer = buffer.slice(data["ExifIFDPointer"] - offsetOfIFD);//?????????????????????????????????????????????????
+            buffer = buffer.slice(data["ExifIFDPointer"] - offsetOfIFD);
             data.SubExif = IFDHandler(buffer, tags.ifd, byteOrder, data["ExifIFDPointer"]);
         }
         if (data["GPSInfoIFDPointer"]) {
