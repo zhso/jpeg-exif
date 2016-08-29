@@ -18,8 +18,12 @@ let data;
  * console.log(isImage);
  */
 function isValid(buffer) {
-    let SOIMarker = buffer.readUInt16BE(0);
-    return SOIMarker === JPEGSOIMarker;
+    try{
+        let SOIMarker = buffer.readUInt16BE(0);
+        return SOIMarker === JPEGSOIMarker;
+    }catch(e){
+        return undefined;
+    }
 }
 /**
  * @param buffer {Buffer}
@@ -125,7 +129,7 @@ function IFDHandler(buffer, tags, order, offset) {
             }
             exif[tagName] = tagValue;
         } else {
-            throw new Error(`Unkown Tag [0x${tagNumber}].`);
+            console.log(`Unkown Tag [0x${tagNumber}].`);
         }
     }
     return exif;
@@ -198,6 +202,7 @@ function sync(file) {
     if (!file) {
         throw new Error("File not found.");
     }
+    data=undefined;
     let buffer = fs.readFileSync(file);
     if (isValid(buffer)) {
         buffer = buffer.slice(SOIMarkerLength);
@@ -223,6 +228,7 @@ function async(file, callback) {
     if (!file) {
         throw new Error("File not found.");
     }
+    data=undefined;
     new Promise((resolve, reject) => {
         fs.readFile(file, (err, buffer) => {
             if (err) {
