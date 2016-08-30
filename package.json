@@ -1,6 +1,6 @@
 {
   "name": "jpeg-exif",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Use for parse .jpg file exif info (including GPS info.).",
   "main": "index.js",
   "scripts": {

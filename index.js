@@ -184,7 +184,7 @@ function EXIFHandler(buffer) {
  */
 function APPnHandler(buffer) {
     let APPMarkerTag = checkAPPn(buffer);
-    if (APPMarkerTag !== false) {//APP0 is 0, and 0==false
+    if (APPMarkerTag !== false) { //APP0 is 0, and 0==false
         let length = buffer.readUInt16BE(APPMarkerLength);
         switch (APPMarkerTag) {
             case 1: //EXIF
