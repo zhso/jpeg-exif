@@ -1,4 +1,6 @@
 # jpeg-exif
+
+[![Join the chat at https://gitter.im/jpeg-exif/Lobby](https://badges.gitter.im/jpeg-exif/Lobby.svg)](https://gitter.im/jpeg-exif/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 Get exif information from jpeg format file.
 
 [![NPM](https://nodei.co/npm/jpeg-exif.png?downloads=true&downloadRank=true&stars=true)][npm-url][![NPM](https://nodei.co/npm-dl/jpeg-exif.png?height=3&months=6)][npm-url]
