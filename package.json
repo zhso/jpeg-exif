@@ -1,6 +1,6 @@
 {
   "name": "jpeg-exif",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Use for parse .jpg file exif info (including GPS info.).",
   "main": "index.js",
   "scripts": {
@@ -25,8 +25,5 @@
     "email": "s@zhso.net"
   },
   "author": "s@zhso.net",
-  "license": "MIT",
-  "devDependencies": {
-    "chai": "^3.5.0"
-  }
+  "license": "MIT"
 }
