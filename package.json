@@ -27,6 +27,6 @@
   "author": "s@zhso.net",
   "license": "MIT",
   "devDependencies": {
-    "eslint": "^2.5.3"
+    "chai": "^3.5.0"
   }
 }

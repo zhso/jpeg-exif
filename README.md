@@ -9,6 +9,8 @@ Get exif information from jpeg format file.
 
 [![GitHub stars](https://img.shields.io/github/stars/zhso/jpeg-exif.svg?style=social&label=Star)](https://github.com/zhso/jpeg-exif/stargazers) [![GitHub watchers](https://img.shields.io/github/watchers/zhso/jpeg-exif.svg?style=social&label=Watch)](https://github.com/zhso/jpeg-exif/subscription)
 
+[![Join the chat at https://gitter.im/jpeg-exif/Lobby](https://badges.gitter.im/jpeg-exif/Lobby.svg)](https://gitter.im/jpeg-exif/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 [npm-url]: https://npmjs.org/package/jpeg-exif
 ### Async
 
