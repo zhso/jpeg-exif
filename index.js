@@ -1,3 +1,4 @@
+'use strict';
 const tags = require('./tags.json');
 const fs = require('fs');
 
