@@ -1,15 +1,7 @@
 # jpeg-exif
 Get exif information from jpeg format file.
 
-[![NPM](https://nodei.co/npm/jpeg-exif.png?downloads=true&downloadRank=true&stars=true)][npm-url][![NPM](https://nodei.co/npm-dl/jpeg-exif.png?height=3&months=6)][npm-url]
-
-[![npm](https://img.shields.io/npm/v/jpeg-exif.svg)][npm-url] [![npm](https://img.shields.io/npm/dm/jpeg-exif.svg)][npm-url] [![npm](https://david-dm.org/zhso/jpeg-exif.svg)][npm-url] [![npm](https://img.shields.io/npm/l/jpeg-exif.svg)][npm-url]
-
-[![bitHound Overall Score](https://www.bithound.io/github/zhso/jpeg-exif/badges/score.svg)](https://www.bithound.io/github/zhso/jpeg-exif) [![Inline docs](http://inch-ci.org/github/zhso/jpeg-exif.svg?branch=master&style=shields)](http://inch-ci.org/github/zhso/jpeg-exif) [![Build Status](https://travis-ci.org/zhso/jpeg-exif.svg?branch=master)](https://travis-ci.org/zhso/jpeg-exif) [![Coverage Status](https://coveralls.io/repos/github/zhso/jpeg-exif/badge.svg?branch=master)](https://coveralls.io/github/zhso/jpeg-exif?branch=master)
-
-[![GitHub stars](https://img.shields.io/github/stars/zhso/jpeg-exif.svg?style=social&label=Star)](https://github.com/zhso/jpeg-exif/stargazers) [![GitHub watchers](https://img.shields.io/github/watchers/zhso/jpeg-exif.svg?style=social&label=Watch)](https://github.com/zhso/jpeg-exif/subscription)
-
-[![Join the chat at https://gitter.im/jpeg-exif/Lobby](https://badges.gitter.im/jpeg-exif/Lobby.svg)](https://gitter.im/jpeg-exif/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![npm](https://img.shields.io/npm/dm/jpeg-exif.svg)][npm-url] [![bitHound Overall Score](https://www.bithound.io/github/zhso/jpeg-exif/badges/score.svg)](https://www.bithound.io/github/zhso/jpeg-exif) [![Inline docs](http://inch-ci.org/github/zhso/jpeg-exif.svg?branch=master&style=shields)](http://inch-ci.org/github/zhso/jpeg-exif) [![Build Status](https://travis-ci.org/zhso/jpeg-exif.svg?branch=master)](https://travis-ci.org/zhso/jpeg-exif) [![Coverage Status](https://coveralls.io/repos/github/zhso/jpeg-exif/badge.svg?branch=master)](https://coveralls.io/github/zhso/jpeg-exif?branch=master)
 
 [npm-url]: https://npmjs.org/package/jpeg-exif
 ### Async
