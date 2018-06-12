@@ -1,6 +1,6 @@
 /* global it, describe */
-const exif = require('./../index.js');
-const expect = require('chai').expect;
+const exif = require('../src/index.js');
+const { expect } = require('chai');
 
 describe('.parse()', () => {
   it('file {undefined}', () => {

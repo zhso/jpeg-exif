@@ -1,10 +1,12 @@
 {
   "name": "jpeg-exif",
-  "version": "1.0.6",
+  "version": "1.1.0",
   "description": "Use for parse .jpg file exif info (including GPS info.).",
   "main": "index.js",
   "scripts": {
-    "test": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha -report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js"
+    "test": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha -report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
+    "lint": "./node_modules/.bin/eslint ./src/index.js ./test/index.test.js --fix",
+    "build": "babel ./src -d lib --source-maps && cp ./src/*.json ./lib"
   },
   "keywords": [
     "jpeg",
@@ -25,5 +27,16 @@
     "email": "s@zhso.net"
   },
   "author": "s@zhso.net",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "chai": "^4.1.2",
+    "coveralls": "^3.0.1",
+    "eslint": "^4.19.1",
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-plugin-import": "^2.12.0",
+    "istanbul": "^0.4.5",
+    "mocha": "^5.2.0"
+  }
 }
