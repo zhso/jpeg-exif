@@ -230,6 +230,24 @@ function APPnHandler(buffer) {
 }
 
 /**
+ * @param buffer {Buffer}
+ * @returns {Object}
+ * @example
+ */
+function fromBuffer(buffer) {
+  if (!buffer) {
+    throw new Error('buffer not found');
+  }
+  data = undefined;
+  if (isValid(buffer)) {
+    buffer = buffer.slice(SOIMarkerLength);
+    data = {};
+    APPnHandler(buffer);
+  }
+  return data;
+}
+
+/**
  * @param file {String}
  * @returns {Object}
  * @example
@@ -240,14 +258,8 @@ function sync(file) {
   if (!file) {
     throw new Error('File not found');
   }
-  data = undefined;
   let buffer = fs.readFileSync(file);
-  if (isValid(buffer)) {
-    buffer = buffer.slice(SOIMarkerLength);
-    data = {};
-    APPnHandler(buffer);
-  }
-  return data;
+  return fromBuffer(buffer);
 }
 
 /**
@@ -296,5 +308,6 @@ function async(file, callback) {
   });
 }
 
+exports.fromBuffer = fromBuffer;
 exports.parse = async;
 exports.parseSync = sync;
