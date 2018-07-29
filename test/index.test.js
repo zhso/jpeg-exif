@@ -68,6 +68,22 @@ describe('.parseSync()', () => {
     const data = exif.parseSync('./test/IMG_0001.JPG');
     expect(data.GPSInfo).to.be.an('object');
   });
+  it('TIFF', () => {
+    const data = exif.parseSync('./test/Arbitro.tiff');
+    expect(data).to.be.eql({
+      ImageWidth: 174,
+      ImageHeight: 38,
+      BitsPerSample: 8,
+      Compression: 5,
+      PhotometricInterpretation: 2,
+      StripOffsets: 8,
+      Orientation: 1,
+      SamplesPerPixel: 4,
+      RowsPerStrip: 38,
+      StripByteCounts: 6391,
+      PlanarConfiguration: 1
+    });
+  });
 });
 describe('.fromBuffer()', () => {
   it('file {undefined}', () => {
