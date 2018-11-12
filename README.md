@@ -23,14 +23,24 @@ exif.parse(file, (err, data) => {
 ```js
 const exif = require("jpeg-exif");
 let file = "~/Photo/IMG_0001.JPG";
-let data=exif.parseSync(file);
+let data = exif.parseSync(file);
+console.log(data);
+```
+
+## From Buffer
+
+```js
+const fs = require("fs");
+const exif = require("jpeg-exif");
+const buffer = fs.readFileSync(file);
+const data = exif.fromBuffer(buffer);
 console.log(data);
 ```
 
 ## Features
 
 * Support All CP3451 Standard Tags (Include GPS & SubExif Tags)
-* Support Both Sync & Async Method
+* Support Sync, Async & fromBuffer Method
 
 ## Installation
 
