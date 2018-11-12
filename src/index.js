@@ -33,27 +33,27 @@ let data;
  * var isImage = isValid(content);
  * console.log(isImage);
  */
-function isValid(buffer) {
+const isValid = (buffer) => {
   try {
     const SOIMarker = buffer.readUInt16BE(0);
     return SOIMarker === JPEGSOIMarker;
   } catch (e) {
     throw new Error('Unsupport file format.');
   }
-}
+};
 /**
  * @param buffer {Buffer}
  * @returns {Boolean}
  * @example
  */
-function isTiff(buffer) {
+const isTiff = (buffer) => {
   try {
     const SOIMarker = buffer.readUInt16BE(0);
     return SOIMarker === TIFFINTEL || SOIMarker === TIFFMOTOROLA;
   } catch (e) {
     throw new Error('Unsupport file format.');
   }
-}
+};
 /**
  * @param buffer {Buffer}
  * @returns {Number}
@@ -62,7 +62,7 @@ function isTiff(buffer) {
  * var APPNumber = checkAPPn(content);
  * console.log(APPNumber);
  */
-function checkAPPn(buffer) {
+const checkAPPn = (buffer) => {
   try {
     const APPMarkerTag = buffer.readUInt16BE(0);
     const isInRange = APPMarkerTag >= APPMarkerBegin && APPMarkerTag <= APPMarkerEnd;
@@ -70,7 +70,7 @@ function checkAPPn(buffer) {
   } catch (e) {
     throw new Error('Invalid APP Tag.');
   }
-}
+};
 /**
  * @param buffer {Buffer}
  * @param tagCollection {Object}
@@ -82,11 +82,13 @@ function checkAPPn(buffer) {
  * var exifFragments = IFDHandler(content, 0, true, 8);
  * console.log(exifFragments.value);
  */
-function IFDHandler(buffer, tagCollection, order, offset) {
+const IFDHandler = (buffer, tagCollection, order, offset) => {
   const entriesNumber = order ? buffer.readUInt16BE(0) : buffer.readUInt16LE(0);
+
   if (entriesNumber === 0) {
     return {};
   }
+
   const entriesNumberLength = 2;
   const entries = buffer.slice(entriesNumberLength);
   const entryLength = 12;
@@ -96,6 +98,7 @@ function IFDHandler(buffer, tagCollection, order, offset) {
   // let nextIFDPointer = order ?bigNextIFDPointer:littleNextIFDPointer;
   const exif = {};
   let entryCount = 0;
+
   for (entryCount; entryCount < entriesNumber; entryCount += 1) {
     const entryBegin = entryCount * entryLength;
     const entry = entries.slice(entryBegin, entryBegin + entryLength);
@@ -119,11 +122,14 @@ function IFDHandler(buffer, tagCollection, order, offset) {
     const componentsNumber = order ? bigComponentsNumber : littleComponentNumber;
     const dataLength = componentsNumber * componentsByte;
     let dataValue = entry.slice(dataValueBegin, dataValueBegin + dataValueLength);
+
     if (dataLength > 4) {
       const dataOffset = (order ? dataValue.readUInt32BE(0) : dataValue.readUInt32LE(0)) - offset;
       dataValue = buffer.slice(dataOffset, dataOffset + dataLength);
     }
+
     let tagValue;
+
     if (tagName) {
       switch (dataFormat) {
         case 1:
@@ -140,11 +146,13 @@ function IFDHandler(buffer, tagCollection, order, offset) {
           break;
         case 5:
           tagValue = [];
+
           for (let i = 0; i < dataValue.length; i += 8) {
             const bigTagValue = dataValue.readUInt32BE(i) / dataValue.readUInt32BE(i + 4);
             const littleTagValue = dataValue.readUInt32LE(i) / dataValue.readUInt32LE(i + 4);
             tagValue.push(order ? bigTagValue : littleTagValue);
           }
+
           break;
         case 7:
           switch (tagName) {
@@ -181,7 +189,7 @@ function IFDHandler(buffer, tagCollection, order, offset) {
      */
   }
   return exif;
-}
+};
 
 /**
  * @param buf {Buffer}
@@ -190,8 +198,9 @@ function IFDHandler(buffer, tagCollection, order, offset) {
  * var content = fs.readFileSync("~/Picture/IMG_0911.JPG");
  * var exifFragments = EXIFHandler(content);
  */
-function EXIFHandler(buf, pad = true) {
-  let buffer = buf
+const EXIFHandler = (buf, pad = true) => {
+  let buffer = buf;
+
   if (pad) {
     buffer = buf.slice(APPMarkerLength);
     const length = buffer.readUInt16BE(0);
@@ -203,6 +212,7 @@ function EXIFHandler(buf, pad = true) {
     const padLength = 1;
     buffer = buffer.slice(padLength);
   }
+
   const byteOrderLength = 2;
   const byteOrder = buffer.toString('ascii', 0, byteOrderLength) === 'MM';
   const fortyTwoLength = 2;
@@ -210,20 +220,24 @@ function EXIFHandler(buf, pad = true) {
   const big42 = buffer.readUInt32BE(fortyTwoEnd);
   const little42 = buffer.readUInt32LE(fortyTwoEnd);
   const offsetOfIFD = byteOrder ? big42 : little42;
+
   buffer = buffer.slice(offsetOfIFD);
+
   if (buffer.length > 0) {
     data = IFDHandler(buffer, tags.ifd, byteOrder, offsetOfIFD);
+
     if (data.ExifIFDPointer) {
       buffer = buffer.slice(data.ExifIFDPointer - offsetOfIFD);
       data.SubExif = IFDHandler(buffer, tags.ifd, byteOrder, data.ExifIFDPointer);
     }
+
     if (data.GPSInfoIFDPointer) {
       const gps = data.GPSInfoIFDPointer;
       buffer = buffer.slice(data.ExifIFDPointer ? gps - data.ExifIFDPointer : gps - offsetOfIFD);
       data.GPSInfo = IFDHandler(buffer, tags.gps, byteOrder, gps);
     }
   }
-}
+};
 
 /**
  * @param buffer {Buffer}
@@ -232,10 +246,12 @@ function EXIFHandler(buf, pad = true) {
  * var content = fs.readFileSync("~/Picture/IMG_0911.JPG");
  * var exifFragments = APPnHandler(content);
  */
-function APPnHandler(buffer) {
+const APPnHandler = (buffer) => {
   const APPMarkerTag = checkAPPn(buffer);
+
   if (APPMarkerTag !== false) { // APP0 is 0, and 0==false
     const length = buffer.readUInt16BE(APPMarkerLength);
+
     switch (APPMarkerTag) {
       case 1: // EXIF
         EXIFHandler(buffer);
@@ -245,18 +261,20 @@ function APPnHandler(buffer) {
         break;
     }
   }
-}
+};
 
 /**
  * @param buffer {Buffer}
  * @returns {Object}
  * @example
  */
-function fromBuffer(buffer) {
+const fromBuffer = (buffer) => {
   if (!buffer) {
     throw new Error('buffer not found');
   }
+
   data = undefined;
+
   if (isValid(buffer)) {
     buffer = buffer.slice(SOIMarkerLength);
     data = {};
@@ -265,8 +283,9 @@ function fromBuffer(buffer) {
     data = {};
     EXIFHandler(buffer, false);
   }
+
   return data;
-}
+};
 
 /**
  * @param file {String}
@@ -275,13 +294,15 @@ function fromBuffer(buffer) {
  * var exif = sync("~/Picture/IMG_1981.JPG");
  * console.log(exif.createTime);
  */
-function sync(file) {
+const sync = (file) => {
   if (!file) {
     throw new Error('File not found');
   }
-  let buffer = fs.readFileSync(file);
+
+  const buffer = fs.readFileSync(file);
+
   return fromBuffer(buffer);
-}
+};
 
 /**
  * @param file {String}
@@ -296,12 +317,14 @@ function sync(file) {
  *     }
  * }
  */
-function async(file, callback) {
+const async = (file, callback) => {
   data = undefined;
+
   new Promise((resolve, reject) => {
     if (!file) {
       reject(new Error('❓File not found.'));
     }
+
     fs.readFile(file, (err, buffer) => {
       if (err) {
         reject(err);
@@ -309,11 +332,14 @@ function async(file, callback) {
         try {
           if (isValid(buffer)) {
             const buf = buffer.slice(SOIMarkerLength);
+
             data = {};
+
             APPnHandler(buf);
             resolve(data);
           } else if (isTiff(buffer)) {
             data = {};
+
             EXIFHandler(buffer, false);
             resolve(data);
           } else {
@@ -331,7 +357,7 @@ function async(file, callback) {
   }).catch((error) => {
     callback(error, undefined);
   });
-}
+};
 
 exports.fromBuffer = fromBuffer;
 exports.parse = async;
