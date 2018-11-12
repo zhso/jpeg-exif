@@ -1,5 +1,5 @@
 # jpeg-exif
-Get exif information from jpeg format file.
+Get exif information from jpeg format file. Works with TIFF too!
 
 [![npm](https://img.shields.io/npm/dm/jpeg-exif.svg)][npm-url] [![Inline docs](http://inch-ci.org/github/zhso/jpeg-exif.svg?branch=master&style=shields)](http://inch-ci.org/github/zhso/jpeg-exif) [![Build Status](https://travis-ci.org/zhso/jpeg-exif.svg?branch=master)](https://travis-ci.org/zhso/jpeg-exif) [![Coverage Status](https://coveralls.io/repos/github/zhso/jpeg-exif/badge.svg?branch=master)](https://coveralls.io/github/zhso/jpeg-exif?branch=master)
 
@@ -7,9 +7,11 @@ Get exif information from jpeg format file.
 ### Async
 
 ```js
-const exif = require("jpeg-exif");
-let file = "~/Photo/IMG_0001.JPG";
-exif.parse(file, (err, data) => {
+import exif from "jpeg-exif";
+
+const filePath = "~/Photo/IMG_0001.JPG";
+
+exif.parse(filePath, (err, data) => {
     if (err) {
         console.log(err);
     } else {
@@ -21,16 +23,32 @@ exif.parse(file, (err, data) => {
 ### Sync
 
 ```js
-const exif = require("jpeg-exif");
-let file = "~/Photo/IMG_0001.JPG";
-let data=exif.parseSync(file);
+import exif from "jpeg-exif";
+
+const filePath = "~/Photo/IMG_0001.JPG";
+const data = exif.parseSync(filePath);
+
+console.log(data);
+```
+
+## From Buffer
+
+```js
+import fs from "fs";
+import exif from "jpeg-exif";
+
+const filePath = "~/Documents/DOC_0001.TIFF";
+const buffer = fs.readFileSync(filePath);
+const data = exif.fromBuffer(buffer);
+
 console.log(data);
 ```
 
 ## Features
 
 * Support All CP3451 Standard Tags (Include GPS & SubExif Tags)
-* Support Both Sync & Async Method
+* Support Sync, Async
+* Support pass Buffer Type
 
 ## Installation
 
