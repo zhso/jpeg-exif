@@ -1,5 +1,5 @@
 # jpeg-exif
-Get exif information from jpeg format file.
+Get exif information from jpeg format file. Works with TIFF too!
 
 [![npm](https://img.shields.io/npm/dm/jpeg-exif.svg)][npm-url] [![Inline docs](http://inch-ci.org/github/zhso/jpeg-exif.svg?branch=master&style=shields)](http://inch-ci.org/github/zhso/jpeg-exif) [![Build Status](https://travis-ci.org/zhso/jpeg-exif.svg?branch=master)](https://travis-ci.org/zhso/jpeg-exif) [![Coverage Status](https://coveralls.io/repos/github/zhso/jpeg-exif/badge.svg?branch=master)](https://coveralls.io/github/zhso/jpeg-exif?branch=master)
 
