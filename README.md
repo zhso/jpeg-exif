@@ -7,9 +7,11 @@ Get exif information from jpeg format file. Works with TIFF too!
 ### Async
 
 ```js
-const exif = require("jpeg-exif");
-let file = "~/Photo/IMG_0001.JPG";
-exif.parse(file, (err, data) => {
+import exif from "jpeg-exif";
+
+const filePath = "~/Photo/IMG_0001.JPG";
+
+exif.parse(filePath, (err, data) => {
     if (err) {
         console.log(err);
     } else {
@@ -21,26 +23,32 @@ exif.parse(file, (err, data) => {
 ### Sync
 
 ```js
-const exif = require("jpeg-exif");
-let file = "~/Photo/IMG_0001.JPG";
-let data = exif.parseSync(file);
+import exif from "jpeg-exif";
+
+const filePath = "~/Photo/IMG_0001.JPG";
+const data = exif.parseSync(filePath);
+
 console.log(data);
 ```
 
 ## From Buffer
 
 ```js
-const fs = require("fs");
-const exif = require("jpeg-exif");
-const buffer = fs.readFileSync(file);
+import fs from "fs";
+import exif from "jpeg-exif";
+
+const filePath = "~/Documents/DOC_0001.TIFF";
+const buffer = fs.readFileSync(filePath);
 const data = exif.fromBuffer(buffer);
+
 console.log(data);
 ```
 
 ## Features
 
 * Support All CP3451 Standard Tags (Include GPS & SubExif Tags)
-* Support Sync, Async & fromBuffer Method
+* Support Sync, Async
+* Support pass Buffer Type
 
 ## Installation
 
