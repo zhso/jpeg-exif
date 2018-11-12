@@ -19,6 +19,8 @@ const tags = require('./tags.json');
 const bytes = [0, 1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8];
 const SOIMarkerLength = 2;
 const JPEGSOIMarker = 0xffd8;
+const TIFFINTEL = 0x4949;
+const TIFFMOTOROLA = 0x4d4d;
 const APPMarkerLength = 2;
 const APPMarkerBegin = 0xffe0;
 const APPMarkerEnd = 0xffef;
@@ -35,6 +37,19 @@ function isValid(buffer) {
   try {
     const SOIMarker = buffer.readUInt16BE(0);
     return SOIMarker === JPEGSOIMarker;
+  } catch (e) {
+    throw new Error('Unsupport file format.');
+  }
+}
+/**
+ * @param buffer {Buffer}
+ * @returns {Boolean}
+ * @example
+ */
+function isTiff(buffer) {
+  try {
+    const SOIMarker = buffer.readUInt16BE(0);
+    return SOIMarker === TIFFINTEL || SOIMarker === TIFFMOTOROLA;
   } catch (e) {
     throw new Error('Unsupport file format.');
   }
@@ -175,16 +190,19 @@ function IFDHandler(buffer, tagCollection, order, offset) {
  * var content = fs.readFileSync("~/Picture/IMG_0911.JPG");
  * var exifFragments = EXIFHandler(content);
  */
-function EXIFHandler(buf) {
-  let buffer = buf.slice(APPMarkerLength);
-  const length = buffer.readUInt16BE(0);
-  buffer = buffer.slice(0, length);
-  const lengthLength = 2;
-  buffer = buffer.slice(lengthLength);
-  const identifierLength = 5;
-  buffer = buffer.slice(identifierLength);
-  const padLength = 1;
-  buffer = buffer.slice(padLength);
+function EXIFHandler(buf, pad = true) {
+  let buffer = buf
+  if (pad) {
+    buffer = buf.slice(APPMarkerLength);
+    const length = buffer.readUInt16BE(0);
+    buffer = buffer.slice(0, length);
+    const lengthLength = 2;
+    buffer = buffer.slice(lengthLength);
+    const identifierLength = 5;
+    buffer = buffer.slice(identifierLength);
+    const padLength = 1;
+    buffer = buffer.slice(padLength);
+  }
   const byteOrderLength = 2;
   const byteOrder = buffer.toString('ascii', 0, byteOrderLength) === 'MM';
   const fortyTwoLength = 2;
@@ -230,6 +248,27 @@ function APPnHandler(buffer) {
 }
 
 /**
+ * @param buffer {Buffer}
+ * @returns {Object}
+ * @example
+ */
+function fromBuffer(buffer) {
+  if (!buffer) {
+    throw new Error('buffer not found');
+  }
+  data = undefined;
+  if (isValid(buffer)) {
+    buffer = buffer.slice(SOIMarkerLength);
+    data = {};
+    APPnHandler(buffer);
+  } else if (isTiff(buffer)) {
+    data = {};
+    EXIFHandler(buffer, false);
+  }
+  return data;
+}
+
+/**
  * @param file {String}
  * @returns {Object}
  * @example
@@ -240,14 +279,8 @@ function sync(file) {
   if (!file) {
     throw new Error('File not found');
   }
-  data = undefined;
   let buffer = fs.readFileSync(file);
-  if (isValid(buffer)) {
-    buffer = buffer.slice(SOIMarkerLength);
-    data = {};
-    APPnHandler(buffer);
-  }
-  return data;
+  return fromBuffer(buffer);
 }
 
 /**
@@ -279,6 +312,10 @@ function async(file, callback) {
             data = {};
             APPnHandler(buf);
             resolve(data);
+          } else if (isTiff(buffer)) {
+            data = {};
+            EXIFHandler(buffer, false);
+            resolve(data);
           } else {
             reject(new Error('😱Unsupport file type.'));
           }
@@ -296,5 +333,6 @@ function async(file, callback) {
   });
 }
 
+exports.fromBuffer = fromBuffer;
 exports.parse = async;
 exports.parseSync = sync;

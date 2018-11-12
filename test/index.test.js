@@ -1,4 +1,5 @@
 /* global it, describe */
+const fs = require('fs');
 const { expect } = require('chai');
 const exif = require('../lib/index.js');
 
@@ -65,6 +66,47 @@ describe('.parseSync()', () => {
   });
   it('[GPSInfo]', () => {
     const data = exif.parseSync('./test/IMG_0001.JPG');
+    expect(data.GPSInfo).to.be.an('object');
+  });
+  it('TIFF', () => {
+    const data = exif.parseSync('./test/Arbitro.tiff');
+    expect(data).to.be.eql({
+      ImageWidth: 174,
+      ImageHeight: 38,
+      BitsPerSample: 8,
+      Compression: 5,
+      PhotometricInterpretation: 2,
+      StripOffsets: 8,
+      Orientation: 1,
+      SamplesPerPixel: 4,
+      RowsPerStrip: 38,
+      StripByteCounts: 6391,
+      PlanarConfiguration: 1
+    });
+  });
+});
+describe('.fromBuffer()', () => {
+  it('file {undefined}', () => {
+    expect(exif.fromBuffer).to.throw(Error);
+  });
+  it('APP1:#0xffe1', () => {
+    const buffer = fs.readFileSync('./test/IMG_0001.JPG');
+    const data = exif.fromBuffer(buffer);
+    expect(data).to.be.an('object');
+  });
+  it('!APP1:#0xffe1', () => {
+    const buffer = fs.readFileSync('./test/IMG_0003.JPG');
+    const data = exif.fromBuffer(buffer);
+    expect(data).to.be.an('object');
+  });
+  it('[SubExif]', () => {
+    const buffer = fs.readFileSync('./test/IMG_0001.JPG');
+    const data = exif.fromBuffer(buffer);
+    expect(data.SubExif).to.be.an('object');
+  });
+  it('[GPSInfo]', () => {
+    const buffer = fs.readFileSync('./test/IMG_0001.JPG');
+    const data = exif.fromBuffer(buffer);
     expect(data.GPSInfo).to.be.an('object');
   });
 });
