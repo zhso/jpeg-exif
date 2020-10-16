@@ -6,7 +6,7 @@
   "scripts": {
     "test": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha -report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
     "lint": "./node_modules/.bin/eslint ./src/index.js ./test/index.test.js --fix",
-    "build": "babel ./src -d lib --source-maps && cp ./src/*.json ./lib"
+    "build": "babel ./src -d lib --source-maps"
   },
   "keywords": [
     "jpeg",
