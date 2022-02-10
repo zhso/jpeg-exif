@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "scripts": {
     "test": "nyc --reporter=text-lcov mocha",
-    "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "coverage": "nyc report --reporter=lcov -- -R spec && cat ./coverage/lcov.info | coveralls",
     "lint": "./node_modules/.bin/eslint ./src/index.js ./test/index.test.js --fix",
     "build": "babel ./src -d lib --source-maps"
   },
