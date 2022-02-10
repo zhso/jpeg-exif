@@ -21,10 +21,8 @@ jobs:
         key: ${{ runner.os }}-node${{ matrix.node-version }}-${{ hashFiles('**/pnpm-lock.yaml') }}
     - run: curl -f https://get.pnpm.io/v6.js | node - add --global pnpm@6
     - run: pnpm install
-    - run: make test-coverage
-      # pnpm test
-      # pnpm coverage
-    # - run: make test-coverage
+    - run: pnpm test
+    - run: pnpm coverage
     - uses: coverallsapp/github-action@master
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
