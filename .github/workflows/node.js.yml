@@ -35,10 +35,9 @@ jobs:
       run: curl -f https://get.pnpm.io/v6.js | node - add --global pnpm@6
     - name: pnpm Build
       run: pnpm install
-    - run: npm ci
-    - run: npm run build --if-present
-    - run: npm test
-    - run: npm run coverage
+    - run: pnpm build --if-present
+    - run: pnpm test
+    - run: pnpm run coverage
     - run: make test-coverage
     - name: Coveralls
       uses: coverallsapp/github-action@master
