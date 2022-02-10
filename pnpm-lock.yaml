@@ -11,6 +11,7 @@ specifiers:
   mocha: ^9.2.0
   mocha-lcov-reporter: ^1.3.0
   nyc: ^15.1.0
+  pnpm: ^6.30.1
 
 devDependencies:
   babel-cli: 6.26.0
@@ -23,6 +24,7 @@ devDependencies:
   mocha: 9.2.0
   mocha-lcov-reporter: 1.3.0
   nyc: 15.1.0
+  pnpm: 6.30.1
 
 packages:
 
@@ -3380,6 +3382,12 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       find-up: 4.1.0
+    dev: true
+
+  /pnpm/6.30.1:
+    resolution: {integrity: sha512-vkhVrxj4tgDREV4feLovUx4PeKggcMi0jrs8lH88Cf+5wnWk6jAv9bTzIxVLTsQCIGDnj4+4rP+7zbYzs5HfPg==}
+    engines: {node: '>=12.17'}
+    hasBin: true
     dev: true
 
   /posix-character-classes/0.1.1:

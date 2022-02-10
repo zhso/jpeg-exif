@@ -2,7 +2,7 @@
 /coverage
 /node_modules
 /.idea
-/.coveralls.yml
+# /.coveralls.yml
 /.vscode
 /.pnpm-debug.log
 /.nyc_output

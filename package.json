@@ -4,8 +4,8 @@
   "description": "Use for parse .jpg file exif info (including GPS info.).",
   "main": "lib/index.js",
   "scripts": {
-    "test": "nyc --reporter=html --reporter=text mocha",
-    "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "test": "nyc --reporter=text-lcov mocha",
+    "coverage": "nyc report --reporter=lcov -- -R spec && cat ./coverage/lcov.info | coveralls",
     "lint": "./node_modules/.bin/eslint ./src/index.js ./test/index.test.js --fix",
     "build": "babel ./src -d lib --source-maps"
   },
@@ -42,6 +42,8 @@
     "eslint-plugin-import": "^2.25.4",
     "mocha": "^9.2.0",
     "mocha-lcov-reporter": "^1.3.0",
-    "nyc": "^15.1.0"
-  }
+    "nyc": "^15.1.0",
+    "pnpm": "^6.30.1"
+  },
+  "preinstall": "npx only-allow pnpm"
 }
