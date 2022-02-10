@@ -1,7 +1,7 @@
 # jpeg-exif
 parse image file meat header, extract exif information without reading the whole file, support tiff/jiff/jpg/jpeg formats.
 
-[![npm](https://img.shields.io/npm/dm/jpeg-exif.svg)][npm-url] [![Inline docs](http://inch-ci.org/github/zhso/jpeg-exif.svg?branch=master&style=shields)](http://inch-ci.org/github/zhso/jpeg-exif) [![Build Status](https://travis-ci.org/zhso/jpeg-exif.svg?branch=master)](https://travis-ci.org/zhso/jpeg-exif) [![Coverage Status](https://coveralls.io/repos/github/zhso/jpeg-exif/badge.svg?branch=master)](https://coveralls.io/github/zhso/jpeg-exif?branch=master)
+[![npm](https://img.shields.io/npm/dm/jpeg-exif.svg)][npm-url] [![Inline docs](http://inch-ci.org/github/zhso/jpeg-exif.svg?branch=master&style=shields)](http://inch-ci.org/github/zhso/jpeg-exif) [![Coverage Status](https://coveralls.io/repos/github/zhso/jpeg-exif/badge.svg?branch=master)](https://coveralls.io/github/zhso/jpeg-exif?branch=master)
 
 [npm-url]: https://npmjs.org/package/jpeg-exif
 ### Async
