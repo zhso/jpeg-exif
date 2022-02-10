@@ -2,44 +2,43 @@
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
 
 name: Build Library
-
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
-
+on: ["push", "pull_request"]
 jobs:
-  build:
-
+  test:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         node-version: [16.x]
         pnpm: [6.30.0]
-
     steps:
     - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v2
+    - uses: actions/setup-node@v2
       with:
         node-version: ${{ matrix.node-version }}
-        # cache: 'npm'
-    - name: Cache .pnpm-store
-      uses: actions/cache@v1
+    - uses: actions/cache@v1
       with:
         path: ~/.pnpm-store
         key: ${{ runner.os }}-node${{ matrix.node-version }}-${{ hashFiles('**/pnpm-lock.yaml') }}
-    - name: Install pnpm
-      run: curl -f https://get.pnpm.io/v6.js | node - add --global pnpm@6
-    - name: pnpm Build
-      run: pnpm install
-    - run: pnpm build --if-present
-    - run: pnpm test
-    - run: pnpm run coverage
+    - run: curl -f https://get.pnpm.io/v6.js | node - add --global pnpm@6
+    - run: pnpm install
     - run: make test-coverage
-    - name: Coveralls
-      uses: coverallsapp/github-action@master
+      # pnpm test
+      # pnpm coverage
+    # - run: make test-coverage
+    - uses: coverallsapp/github-action@master
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [16.x]
+        pnpm: [6.30.0]
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: pnpm install
+    - run: pnpm build --if-present
