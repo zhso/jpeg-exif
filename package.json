@@ -9,6 +9,9 @@
     "lint": "./node_modules/.bin/eslint ./src/index.js ./test/index.test.js --fix",
     "build": "babel ./src -d lib --source-maps"
   },
+  "engines": {
+    "node": ">=16"
+  },
   "keywords": [
     "jpeg",
     "exif",
