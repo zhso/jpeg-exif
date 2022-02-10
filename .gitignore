@@ -4,3 +4,5 @@
 /.idea
 /.coveralls.yml
 /.vscode
+/.pnpm-debug.log
+/.nyc_output

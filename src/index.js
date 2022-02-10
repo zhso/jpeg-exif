@@ -1,6 +1,6 @@
-import fs from 'fs';
+import fs from "fs";
 
-const tags = require('./tags.json');
+const tags = require("./tags.json");
 
 /*
  unsignedByte,
@@ -38,7 +38,7 @@ const isValid = (buffer) => {
     const SOIMarker = buffer.readUInt16BE(0);
     return SOIMarker === JPEGSOIMarker;
   } catch (e) {
-    throw new Error('Unsupport file format.');
+    throw new Error("Unsupport file format.");
   }
 };
 /**
@@ -51,7 +51,7 @@ const isTiff = (buffer) => {
     const SOIMarker = buffer.readUInt16BE(0);
     return SOIMarker === TIFFINTEL || SOIMarker === TIFFMOTOROLA;
   } catch (e) {
-    throw new Error('Unsupport file format.');
+    throw new Error("Unsupport file format.");
   }
 };
 /**
@@ -65,10 +65,11 @@ const isTiff = (buffer) => {
 const checkAPPn = (buffer) => {
   try {
     const APPMarkerTag = buffer.readUInt16BE(0);
-    const isInRange = APPMarkerTag >= APPMarkerBegin && APPMarkerTag <= APPMarkerEnd;
+    const isInRange =
+      APPMarkerTag >= APPMarkerBegin && APPMarkerTag <= APPMarkerEnd;
     return isInRange ? APPMarkerTag - APPMarkerBegin : false;
   } catch (e) {
-    throw new Error('Invalid APP Tag.');
+    throw new Error("Invalid APP Tag.");
   }
 };
 /**
@@ -111,7 +112,9 @@ const IFDHandler = (buffer, tagCollection, order, offset) => {
     const dataValueBegin = componentsBegin + componentsNumberLength;
     const dataValueLength = 4;
     const tagAddress = entry.slice(tagBegin, dataFormatBegin);
-    const tagNumber = order ? tagAddress.toString('hex') : tagAddress.reverse().toString('hex');
+    const tagNumber = order
+      ? tagAddress.toString("hex")
+      : tagAddress.reverse().toString("hex");
     const tagName = tagCollection[tagNumber];
     const bigDataFormat = entry.readUInt16BE(dataFormatBegin);
     const littleDataFormat = entry.readUInt16LE(dataFormatBegin);
@@ -119,12 +122,19 @@ const IFDHandler = (buffer, tagCollection, order, offset) => {
     const componentsByte = bytes[dataFormat];
     const bigComponentsNumber = entry.readUInt32BE(componentsBegin);
     const littleComponentNumber = entry.readUInt32LE(componentsBegin);
-    const componentsNumber = order ? bigComponentsNumber : littleComponentNumber;
+    const componentsNumber = order
+      ? bigComponentsNumber
+      : littleComponentNumber;
     const dataLength = componentsNumber * componentsByte;
-    let dataValue = entry.slice(dataValueBegin, dataValueBegin + dataValueLength);
+    let dataValue = entry.slice(
+      dataValueBegin,
+      dataValueBegin + dataValueLength
+    );
 
     if (dataLength > 4) {
-      const dataOffset = (order ? dataValue.readUInt32BE(0) : dataValue.readUInt32LE(0)) - offset;
+      const dataOffset =
+        (order ? dataValue.readUInt32BE(0) : dataValue.readUInt32LE(0)) -
+        offset;
       dataValue = buffer.slice(dataOffset, dataOffset + dataLength);
     }
 
@@ -136,48 +146,55 @@ const IFDHandler = (buffer, tagCollection, order, offset) => {
           tagValue = dataValue.readUInt8(0);
           break;
         case 2:
-          tagValue = dataValue.toString('ascii').replace(/\0+$/, '');
+          tagValue = dataValue.toString("ascii").replace(/\0+$/, "");
           break;
         case 3:
-          tagValue = order ? dataValue.readUInt16BE(0) : dataValue.readUInt16LE(0);
+          tagValue = order
+            ? dataValue.readUInt16BE(0)
+            : dataValue.readUInt16LE(0);
           break;
         case 4:
-          tagValue = order ? dataValue.readUInt32BE(0) : dataValue.readUInt32LE(0);
+          tagValue = order
+            ? dataValue.readUInt32BE(0)
+            : dataValue.readUInt32LE(0);
           break;
         case 5:
           tagValue = [];
 
           for (let i = 0; i < dataValue.length; i += 8) {
-            const bigTagValue = dataValue.readUInt32BE(i) / dataValue.readUInt32BE(i + 4);
-            const littleTagValue = dataValue.readUInt32LE(i) / dataValue.readUInt32LE(i + 4);
+            const bigTagValue =
+              dataValue.readUInt32BE(i) / dataValue.readUInt32BE(i + 4);
+            const littleTagValue =
+              dataValue.readUInt32LE(i) / dataValue.readUInt32LE(i + 4);
             tagValue.push(order ? bigTagValue : littleTagValue);
           }
 
           break;
         case 7:
           switch (tagName) {
-            case 'ExifVersion':
+            case "ExifVersion":
               tagValue = dataValue.toString();
               break;
-            case 'FlashPixVersion':
+            case "FlashPixVersion":
               tagValue = dataValue.toString();
               break;
-            case 'SceneType':
+            case "SceneType":
               tagValue = dataValue.readUInt8(0);
               break;
             default:
-              tagValue = `0x${dataValue.toString('hex', 0, 15)}`;
+              tagValue = `0x${dataValue.toString("hex", 0, 15)}`;
               break;
           }
           break;
         case 10: {
           const bigOrder = dataValue.readInt32BE(0) / dataValue.readInt32BE(4);
-          const littleOrder = dataValue.readInt32LE(0) / dataValue.readInt32LE(4);
+          const littleOrder =
+            dataValue.readInt32LE(0) / dataValue.readInt32LE(4);
           tagValue = order ? bigOrder : littleOrder;
           break;
         }
         default:
-          tagValue = `0x${dataValue.toString('hex')}`;
+          tagValue = `0x${dataValue.toString("hex")}`;
           break;
       }
       exif[tagName] = tagValue;
@@ -214,7 +231,7 @@ const EXIFHandler = (buf, pad = true) => {
   }
 
   const byteOrderLength = 2;
-  const byteOrder = buffer.toString('ascii', 0, byteOrderLength) === 'MM';
+  const byteOrder = buffer.toString("ascii", 0, byteOrderLength) === "MM";
   const fortyTwoLength = 2;
   const fortyTwoEnd = byteOrderLength + fortyTwoLength;
   const big42 = buffer.readUInt32BE(fortyTwoEnd);
@@ -228,12 +245,19 @@ const EXIFHandler = (buf, pad = true) => {
 
     if (data.ExifIFDPointer) {
       buffer = buffer.slice(data.ExifIFDPointer - offsetOfIFD);
-      data.SubExif = IFDHandler(buffer, tags.ifd, byteOrder, data.ExifIFDPointer);
+      data.SubExif = IFDHandler(
+        buffer,
+        tags.ifd,
+        byteOrder,
+        data.ExifIFDPointer
+      );
     }
 
     if (data.GPSInfoIFDPointer) {
       const gps = data.GPSInfoIFDPointer;
-      buffer = buffer.slice(data.ExifIFDPointer ? gps - data.ExifIFDPointer : gps - offsetOfIFD);
+      buffer = buffer.slice(
+        data.ExifIFDPointer ? gps - data.ExifIFDPointer : gps - offsetOfIFD
+      );
       data.GPSInfo = IFDHandler(buffer, tags.gps, byteOrder, gps);
     }
   }
@@ -249,7 +273,8 @@ const EXIFHandler = (buf, pad = true) => {
 const APPnHandler = (buffer) => {
   const APPMarkerTag = checkAPPn(buffer);
 
-  if (APPMarkerTag !== false) { // APP0 is 0, and 0==false
+  if (APPMarkerTag !== false) {
+    // APP0 is 0, and 0==false
     const length = buffer.readUInt16BE(APPMarkerLength);
 
     switch (APPMarkerTag) {
@@ -270,7 +295,7 @@ const APPnHandler = (buffer) => {
  */
 const fromBuffer = (buffer) => {
   if (!buffer) {
-    throw new Error('buffer not found');
+    throw new Error("buffer not found");
   }
 
   data = undefined;
@@ -296,7 +321,7 @@ const fromBuffer = (buffer) => {
  */
 const sync = (file) => {
   if (!file) {
-    throw new Error('File not found');
+    throw new Error("File not found");
   }
 
   const buffer = fs.readFileSync(file);
@@ -320,43 +345,48 @@ const sync = (file) => {
 const async = (file, callback) => {
   data = undefined;
 
-  new Promise((resolve, reject) => {
-    if (!file) {
-      reject(new Error('❓File not found.'));
-    }
-
-    fs.readFile(file, (err, buffer) => {
-      if (err) {
-        reject(err);
-      } else {
-        try {
-          if (isValid(buffer)) {
-            const buf = buffer.slice(SOIMarkerLength);
-
-            data = {};
-
-            APPnHandler(buf);
-            resolve(data);
-          } else if (isTiff(buffer)) {
-            data = {};
-
-            EXIFHandler(buffer, false);
-            resolve(data);
-          } else {
-            reject(new Error('😱Unsupport file type.'));
-          }
-        } catch (e) {
-          reject(e);
-        }
+  new Promise(
+    (resolve, reject) => {
+      if (!file) {
+        reject(new Error("❓File not found."));
       }
+
+      fs.readFile(file, (err, buffer) => {
+        if (err) {
+          reject(err);
+        } else {
+          try {
+            if (isValid(buffer)) {
+              const buf = buffer.slice(SOIMarkerLength);
+
+              data = {};
+
+              APPnHandler(buf);
+              resolve(data);
+            } else if (isTiff(buffer)) {
+              data = {};
+
+              EXIFHandler(buffer, false);
+              resolve(data);
+            } else {
+              reject(new Error("😱Unsupport file type."));
+            }
+          } catch (e) {
+            reject(e);
+          }
+        }
+      });
+    },
+    (error) => {
+      callback(error, undefined);
+    }
+  )
+    .then((d) => {
+      callback(undefined, d);
+    })
+    .catch((error) => {
+      callback(error, undefined);
     });
-  }, (error) => {
-    callback(error, undefined);
-  }).then((d) => {
-    callback(undefined, d);
-  }).catch((error) => {
-    callback(error, undefined);
-  });
 };
 
 exports.fromBuffer = fromBuffer;
