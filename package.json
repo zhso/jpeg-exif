@@ -2,7 +2,10 @@
   "name": "jpeg-exif",
   "version": "1.1.4",
   "description": "Use for parse .jpg file exif info (including GPS info.).",
-  "main": "lib/index.js",
+  "main": "lib/node.js",
+  "browser": {
+    "lib/node.js": "./lib/browser.js"
+  },
   "scripts": {
     "test": "nyc --reporter=text-lcov mocha",
     "coverage": "nyc report --reporter=lcov -- -R spec && cat ./coverage/lcov.info | coveralls",
