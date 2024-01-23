@@ -24,7 +24,7 @@ const TIFFMOTOROLA = 0x4d4d;
 const APPMarkerLength = 2;
 const APPMarkerBegin = 0xffe0;
 const APPMarkerEnd = 0xffef;
-let data;
+
 /**
  * @param buffer {Buffer}
  * @returns {Boolean}
@@ -216,6 +216,7 @@ const IFDHandler = (buffer, tagCollection, order, offset) => {
  * var exifFragments = EXIFHandler(content);
  */
 const EXIFHandler = (buf, pad = true) => {
+  let data = {};
   let buffer = buf;
 
   if (pad) {
@@ -261,6 +262,8 @@ const EXIFHandler = (buf, pad = true) => {
       data.GPSInfo = IFDHandler(buffer, tags.gps, byteOrder, gps);
     }
   }
+
+  return data
 };
 
 /**
@@ -279,11 +282,9 @@ const APPnHandler = (buffer) => {
 
     switch (APPMarkerTag) {
       case 1: // EXIF
-        EXIFHandler(buffer);
-        break;
+        return EXIFHandler(buffer);
       default:
-        APPnHandler(buffer.slice(APPMarkerLength + length));
-        break;
+        return APPnHandler(buffer.slice(APPMarkerLength + length));
     }
   }
 };
@@ -298,15 +299,13 @@ const fromBuffer = (buffer) => {
     throw new Error("buffer not found");
   }
 
-  data = undefined;
+  let data;
 
   if (isValid(buffer)) {
     buffer = buffer.slice(SOIMarkerLength);
-    data = {};
-    APPnHandler(buffer);
+    data = APPnHandler(buffer);
   } else if (isTiff(buffer)) {
-    data = {};
-    EXIFHandler(buffer, false);
+    data = EXIFHandler(buffer, false);
   }
 
   return data;
@@ -343,7 +342,7 @@ const sync = (file) => {
  * }
  */
 const async = (file, callback) => {
-  data = undefined;
+  let data;
 
   new Promise(
     (resolve, reject) => {
@@ -359,14 +358,12 @@ const async = (file, callback) => {
             if (isValid(buffer)) {
               const buf = buffer.slice(SOIMarkerLength);
 
-              data = {};
+              data = APPnHandler(buf);
 
-              APPnHandler(buf);
               resolve(data);
             } else if (isTiff(buffer)) {
-              data = {};
+              data = EXIFHandler(buffer, false);
 
-              EXIFHandler(buffer, false);
               resolve(data);
             } else {
               reject(new Error("😱Unsupport file type."));
