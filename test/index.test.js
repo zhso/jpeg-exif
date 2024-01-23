@@ -1,7 +1,7 @@
 /* global it, describe */
 const fs = require("fs");
 const { expect } = require("chai");
-const exif = require("../lib/index.js");
+const exif = require("../lib/node.js");
 
 describe(".parse()", () => {
   it("file {undefined}", () => {
